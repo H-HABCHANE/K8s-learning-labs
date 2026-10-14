@@ -1,0 +1,19 @@
+apiVersion: apps/v1        # les Deployments sont dans le groupe "apps"
+kind: Deployment           # le type d'objet
+metadata:
+  name: monsite            # le nom du Deployment
+spec:
+  replicas: 3              # je veux TOUJOURS 3 Pods
+  selector:
+    matchLabels:
+      app: monsite         # "les Pods qui m'appartiennent sont ceux qui ont l'étiquette app=monsite"
+  template:                # le modèle (la recette) pour fabriquer chaque Pod
+    metadata:
+      labels:
+        app: monsite       # l'étiquette collée sur chaque Pod fabriqué
+    spec:
+      containers:
+        - name: nginx
+          image: nginx
+          ports:
+            - containerPort: 80

@@ -1,0 +1,26 @@
+# Accès aux clusters et secrets
+kubeconfig
+*.kubeconfig
+.kube/
+*.key
+*.crt
+*.pem
+.env
+.env.*
+
+# Données locales de cluster
+.minikube/
+
+# Artefacts lourds
+*.tar
+*.tgz
+
+# Logs
+*.log
+
+# Fichiers temporaires
+*.swp
+*.swo
+*~
+.DS_Store
+tmp/

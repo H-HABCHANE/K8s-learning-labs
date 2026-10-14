@@ -1,0 +1,12 @@
+apiVersion: v1          # version de l'API Kubernetes pour un Pod
+kind: Pod               # le type d'objet : ici un Pod
+metadata:
+  name: mon-premier-pod # le nom du Pod
+  labels:
+    app: monsite        # une étiquette (servira plus tard)
+spec:                   # la description de ce qu'on veut
+  containers:
+    - name: nginx       # nom du conteneur dans le Pod
+      image: nginx      # l'image Docker à utiliser (comme docker run nginx)
+      ports:
+        - containerPort: 80  # le port sur lequel nginx écoute
