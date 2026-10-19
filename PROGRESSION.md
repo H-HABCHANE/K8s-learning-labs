@@ -5,11 +5,13 @@
 - [x] Étape 2 : le Pod (théorie + fichier `pod-nginx.yaml`) → `02-pods/`
 - [x] Étape 3 : installation de kubectl + minikube → `03-installation/`
 - [x] Étape 3 bis : lancer mon premier Pod pour de vrai → `02-pods/`
-- [ ] Étape 4 : le Deployment (relance automatique, répliques) → `04-deployments/` ← JE SUIS ICI
+- [x] Étape 4 : le Deployment (relance automatique, répliques) → `04-deployments/`
+- [x] ReplicaSet (Jour 1 du programme DevOps) → `05-replicasets/`
 - [ ] Étape 5 : le Service (accéder à mon application)
 - [ ] Étape 6 : les commandes kubectl essentielles (récapitulatif)
 
 ## Où je me suis arrêté
+- Suite du cours : voir `PROGRESSION_DEVOPS.md` (programme DevOps 10 jours).
 - Étape 3 bis terminée : apply, get pods, describe, logs, delete → le Pod seul ne revient pas.
 - Étape 4 : Deployment lancé (3/3), remplacement automatique vérifié (nouveau Pod 4vcxz). Prochaine action : changer le nombre de répliques (replicas: 5) dans `04-deployments/deployment-nginx.yaml` (avec `sed`, car `nano` ne marche pas avec `!`), puis `kubectl apply -f 04-deployments/deployment-nginx.yaml`.
 

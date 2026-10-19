@@ -3,7 +3,7 @@ kind: Deployment           # le type d'objet
 metadata:
   name: monsite            # le nom du Deployment
 spec:
-  replicas: 3              # je veux TOUJOURS 3 Pods
+  replicas: 5              # je veux TOUJOURS 5 Pods
   selector:
     matchLabels:
       app: monsite         # "les Pods qui m'appartiennent sont ceux qui ont l'étiquette app=monsite"
