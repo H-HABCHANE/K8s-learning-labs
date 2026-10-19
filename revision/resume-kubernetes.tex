@@ -1,0 +1,181 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{fontspec}
+\usepackage[french]{babel}
+\usepackage[margin=2cm]{geometry}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+\definecolor{bleu}{RGB}{25,60,110}
+\definecolor{fond}{RGB}{245,246,248}
+\definecolor{vert}{RGB}{30,110,60}
+\definecolor{gris}{RGB}{110,110,110}
+
+\hypersetup{colorlinks=true, linkcolor=bleu, urlcolor=bleu}
+\setlist{nosep, leftmargin=*}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{fond},
+  frame=single, rulecolor=\color{gris!40},
+  commentstyle=\color{vert},
+  morecomment=[l]{\#},
+  columns=fullflexible, keepspaces=true,
+  breaklines=true, xleftmargin=4pt, xrightmargin=4pt
+}
+
+\newcommand{\retenir}[1]{\par\smallskip\noindent\colorbox{fond}{\parbox{\dimexpr\linewidth-2\fboxsep}{\textbf{\textcolor{bleu}{À retenir :}} #1}}\par\smallskip}
+
+\title{\textbf{\textcolor{bleu}{Kubernetes : mon résumé de révision}}\\[4pt]
+\large Des bases au rolling update et au rollback}
+\author{Hicham Habchane}
+\date{19 octobre 2026 --- Programme DevOps, Jour 1}
+
+\begin{document}
+\maketitle
+
+\section{L'idée de Kubernetes}
+
+\textbf{Docker} crée et lance des conteneurs. \textbf{Kubernetes} les organise : il les lance, les multiplie, les surveille et les relance.
+
+\textbf{L'état souhaité :} je ne donne pas d'ordre (« lance un conteneur »), je \emph{décris} ce que je veux (« toujours 3 nginx »). Kubernetes corrige la réalité en permanence.
+
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Kubernetes} & \textbf{Restaurant} \\
+\midrule
+Conteneur & le plat \\
+Pod & le plateau \\
+ReplicaSet & le chef d'équipe qui compte les plateaux \\
+Deployment & le responsable de salle \\
+template & la fiche recette \\
+labels & l'autocollant sur le plateau \\
+Service & l'accueil du restaurant \\
+Kubernetes / kubectl & le gérant / la télécommande \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Le cluster (minikube)}
+
+Un seul nœud \texttt{minikube} : il dirige (control-plane) et fait tourner les Pods. Les conteneurs tournent avec \textbf{containerd}.
+
+\begin{lstlisting}
+minikube start        # allumer le cluster (après chaque redémarrage du PC)
+minikube status       # allumé ou éteint ?
+kubectl get nodes     # attendre STATUS = Ready
+\end{lstlisting}
+\retenir{erreur \texttt{no route to host} ou \texttt{connection refused} $\rightarrow$ le cluster est éteint.}
+
+\section{Le Pod}
+
+La plus petite unité de Kubernetes : une enveloppe autour d'un conteneur, avec un nom et une IP interne.
+
+\begin{lstlisting}
+kubectl apply -f pod-nginx.yaml     # créer le Pod
+kubectl get pods                    # ContainerCreating puis Running
+kubectl describe pod <nom>          # fiche détaillée, Events en bas
+kubectl logs <nom>                  # ce que le conteneur affiche
+\end{lstlisting}
+
+Un fichier YAML a toujours 4 parties : \texttt{apiVersion}, \texttt{kind}, \texttt{metadata}, \texttt{spec}.
+
+\retenir{un Pod est \textbf{jetable}. Un Pod seul supprimé ne revient \textbf{jamais}.\\
+\texttt{RESTARTS} = redémarrages du \emph{conteneur}, pas du Pod.}
+
+\section{Le ReplicaSet}
+
+Il garde \textbf{N Pods identiques} en marche. Il ne regarde \textbf{que les étiquettes} (\texttt{selector}).
+
+\begin{itemize}
+  \item Pod \textbf{en trop} avec la bonne étiquette $\rightarrow$ il en \textbf{supprime} un (le Pod \texttt{intrus}).
+  \item Pod orphelin déjà présent avec la bonne étiquette $\rightarrow$ il l'\textbf{adopte}.
+  \item \textbf{Limite :} si je change l'image, les Pods existants \textbf{ne changent pas}.
+\end{itemize}
+
+\begin{lstlisting}
+kubectl get pods -l app=web          # filtrer par étiquette
+kubectl describe pod intrus          # Controlled By: ReplicaSet/web-rs = adoption
+\end{lstlisting}
+\retenir{1 sélecteur = 1 seul contrôleur. On n'écrit jamais de ReplicaSet à la main : on écrit un Deployment.}
+
+\section{Le Deployment}
+
+Il crée et pilote les ReplicaSets. Nom d'un Pod : \texttt{monsite-86f69f946d-4vcxz}
+= Deployment -- \emph{hash du template} (le ReplicaSet) -- identifiant du Pod.
+
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+\textbf{Je change\dots} & \textbf{Résultat} \\
+\midrule
+\texttt{replicas} (3 $\rightarrow$ 5) & même ReplicaSet, seul DESIRED change, anciens Pods gardés \\
+le \texttt{template} (l'image) & \textbf{nouveau} ReplicaSet = nouvelle \textbf{révision} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\retenir{1 révision = 1 ReplicaSet. Les anciens ReplicaSets restent à 0 pour permettre le rollback.}
+
+\section{Rolling update (mise à jour sans coupure)}
+
+\begin{lstlisting}
+sed -i 's/image: nginx$/image: nginx:1.27/' deployment-nginx.yaml
+kubectl apply -f deployment-nginx.yaml
+kubectl rollout status deployment monsite     # suivre en direct
+\end{lstlisting}
+
+Le nouveau ReplicaSet monte (0$\rightarrow$5) pendant que l'ancien descend (5$\rightarrow$0), petit à petit.
+
+\begin{itemize}
+  \item \textbf{maxSurge 25\,\%} (arrondi au-dessus) : jusqu'à 2 Pods \emph{en plus} (7 au total).
+  \item \textbf{maxUnavailable 25\,\%} (arrondi au-dessous) : toujours au moins 4 Pods disponibles.
+\end{itemize}
+\retenir{pendant la mise à jour, 2 versions coexistent : elles doivent rester compatibles.}
+
+\section{Rollback (retour arrière)}
+
+\begin{lstlisting}
+kubectl rollout history deployment monsite    # révisions
+kubectl rollout undo deployment monsite       # revenir à la version d'avant
+\end{lstlisting}
+
+Le Deployment \textbf{réutilise l'ancien ReplicaSet} avec des Pods neufs. C'est un nouveau déploiement : la révision 1 devient la révision 3.
+
+\section{Déclaratif, impératif et dérive}
+
+\begin{itemize}
+  \item \textbf{Déclaratif} (bonne pratique) : je modifie le fichier puis \texttt{apply}. Le fichier dans Git fait foi.
+  \item \textbf{Impératif} : \texttt{kubectl scale}, \texttt{rollout undo}. Le fichier n'est pas modifié.
+  \item Cluster $\neq$ fichier = \textbf{dérive} (drift) : le prochain \texttt{apply} remet l'ancien état.
+\end{itemize}
+\retenir{après un rollback, je remets le fichier d'accord avec le cluster.
+\texttt{apply} répond \texttt{created}, \texttt{configured} ou \texttt{unchanged}.}
+
+\section{Services (à venir)}
+
+Les Pods changent d'IP. Le Service donne \textbf{un nom et une adresse fixe} devant un groupe de Pods (par \texttt{selector}) et répartit les requêtes.
+\textbf{ClusterIP} : interne au cluster. \textbf{NodePort} : accès externe (ports 30000--32767). \textbf{port-forward} : tunnel temporaire vers mon PC.
+
+\section{Questions d'entretien}
+
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{5.2cm}X@{}}
+\toprule
+Question & Réponse courte \\
+\midrule
+Pod, ReplicaSet, Deployment ? & Pod = exécute ; ReplicaSet = maintient N Pods par étiquettes ; Deployment = pilote les ReplicaSets, rolling update et rollback. \\
+Comment K8s garde 3 replicas ? & Le ReplicaSet compare sans arrêt le nombre de Pods étiquetés au nombre voulu, puis crée ou supprime. \\
+Pourquoi garder les vieux ReplicaSets ? & Pour le rollback. \\
+maxSurge / maxUnavailable ? & Pods en plus autorisés / Pods indisponibles au maximum $\rightarrow$ pas de coupure. \\
+Déclaratif ou impératif ? & Déclaratif : le fichier dans Git fait foi, sinon dérive. \\
+\bottomrule
+\end{tabularx}
+
+\end{document}

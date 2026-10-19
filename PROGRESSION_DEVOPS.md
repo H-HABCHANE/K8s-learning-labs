@@ -19,10 +19,10 @@ Objectif : déployer une application, la rendre accessible et gérer ses mises �
   - [x] Ex. 3 : ReplicaSet et labels (suppression de l intrus, adoption prouvée)
   - [x] Ex. 4 : pourquoi un Deployment plutôt qu'un ReplicaSet (mise à jour manuelle, 2 versions en même temps)
 - [~] Déployer Nginx avec 3 replicas et vérifier les Pods (sans tutoriel) — scale 3→5 vérifié
-- [ ] Tester ClusterIP, NodePort et kubectl port-forward
+- [x] Tester ClusterIP, NodePort et kubectl port-forward (Ex. 8–10, 06-services/)
 - [x] Réaliser un rolling update puis un rollback (rollout status / history / undo, dérive corrigée)
-- [ ] Supprimer un Pod et observer sa recréation
-- [ ] Questions d'entretien Kubernetes
+- [x] Supprimer un Pod et observer sa recréation (Endpoints mis à jour, port-forward cassé)
+- [x] Questions d'entretien Kubernetes (5 questions + 2 cas concrets, 06-services/README.md)
 Validation : déploiement, exposition et rollback sans tutoriel.
 
 ## Jour 2 — Kubernetes : configuration et dépannage  [ ]
@@ -110,7 +110,7 @@ Validation : défendre le projet et résoudre un incident simple.
 | # | Question | État |
 |---|---|---|
 | 1 | Différence entre Pod, ReplicaSet et Deployment ? | [x] (19/10) |
-| 2 | Comment Kubernetes maintient-il trois replicas ? | [ ] |
+| 2 | Comment Kubernetes maintient-il trois replicas ? | [x] (20/10) |
 | 3 | Comment diagnostiquer CrashLoopBackOff ? | [ ] |
 | 4 | Comment fonctionne un pipeline GitHub Actions ? | [ ] |
 | 5 | Comment sécuriser IAM, SSH et les secrets CI/CD ? | [ ] |
@@ -121,4 +121,5 @@ Validation : défendre le projet et résoudre un incident simple.
 | 10 | Comment présenter les compromis de ton architecture ? | [ ] |
 
 ## Journal
-- 19/10 : bilan de départ, début Jour 1 → Ex. 1 ReplicaSet validé ; Ex. 2 validé ; Ex. 3 validé (intrus supprimé puis adopté) ; Ex. 4 validé. Question n°1 validée. web-rs nettoyé. Ex. 5 scale 3→5 vérifié (4/4 prédictions). Déclaratif vs impératif compris. Ex. 6 rolling update validé. Ex. 7 rollback validé (+ dérive corrigée, last-applied-configuration). Suite : commit Git, puis Services (ClusterIP, NodePort, port-forward).
+- 19/10 : bilan de départ, début Jour 1 → Ex. 1 ReplicaSet validé ; Ex. 2 validé ; Ex. 3 validé (intrus supprimé puis adopté) ; Ex. 4 validé. Question n°1 validée. web-rs nettoyé. Ex. 5 scale 3→5 vérifié (4/4 prédictions). Déclaratif vs impératif compris. Ex. 6 rolling update validé. Ex. 7 rollback validé (+ dérive corrigée, last-applied-configuration). Commit 4aae261 poussé. Révision : notes.md, commandes.md, revision/resume-kubernetes.pdf mis à jour. REPRISE : Ex. 8 Service ClusterIP (06-services/service-clusterip.yaml, monsite-svc, selector app: monsite, port 80 → targetPort 80).
+- 20/10 : Ex. 8 ClusterIP monsite-svc validé (5 Endpoints, test busybox + DNS). Ex. 9 NodePort 30080 validé (curl depuis le PC). Ex. 10 port-forward + panne d'un Pod validé (Endpoints .19→.25, port-forward lié à un seul Pod). Questions d'entretien Jour 1 validées (Q1–Q5 + 2 cas concrets). REPRISE 21/10 : défi final sans aide (07-defi-jour1/ : Deployment boutique httpd:2.4 ×3, Service NodePort boutique-svc 30090, rolling update httpd:2.4-alpine, rollback, fichier remis d'accord, site testé).
