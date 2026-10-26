@@ -7,7 +7,7 @@
 - [x] Étape 3 bis : lancer mon premier Pod pour de vrai → `02-pods/`
 - [x] Étape 4 : le Deployment (relance automatique, répliques) → `04-deployments/`
 - [x] ReplicaSet (Jour 1 du programme DevOps) → `05-replicasets/`
-- [ ] Étape 5 : le Service (accéder à mon application)
+- [x] Étape 5 : le Service (accéder à mon application) → `06-services/`, `07-revision-jour1/`
 - [ ] Étape 6 : les commandes kubectl essentielles (récapitulatif)
 
 ## Où je me suis arrêté

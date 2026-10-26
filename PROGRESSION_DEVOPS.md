@@ -11,19 +11,19 @@ Légende : [ ] à faire · [~] en cours · [x] validé (pratique + questions ré
 - ReplicaSet : seulement cité, jamais manipulé directement → À APPRENDRE.
 - Pas encore vus : Services, rolling update, rollback, port-forward.
 
-## Jour 1 — Kubernetes : fondamentaux  [~]
+## Jour 1 — Kubernetes : fondamentaux  [x] (validé le 26/10/2026)
 Objectif : déployer une application, la rendre accessible et gérer ses mises à jour.
 - [x] Révision Pods, ReplicaSets, Deployments, YAML (partie ReplicaSet)
   - [x] Ex. 1 : observer le ReplicaSet créé par un Deployment (describe, Controlled By)
   - [x] Ex. 2 : écrire et appliquer un ReplicaSet à la main
   - [x] Ex. 3 : ReplicaSet et labels (suppression de l intrus, adoption prouvée)
   - [x] Ex. 4 : pourquoi un Deployment plutôt qu'un ReplicaSet (mise à jour manuelle, 2 versions en même temps)
-- [~] Déployer Nginx avec 3 replicas et vérifier les Pods (sans tutoriel) — scale 3→5 vérifié
+- [x] Déployer Nginx avec 3 replicas et vérifier les Pods (sans tutoriel) — scale 3→5 vérifié ; défi boutique 3/3 sans aide
 - [x] Tester ClusterIP, NodePort et kubectl port-forward (Ex. 8–10, 06-services/)
 - [x] Réaliser un rolling update puis un rollback (rollout status / history / undo, dérive corrigée)
 - [x] Supprimer un Pod et observer sa recréation (Endpoints mis à jour, port-forward cassé)
 - [x] Questions d'entretien Kubernetes (5 questions + 2 cas concrets, 06-services/README.md)
-Validation : déploiement, exposition et rollback sans tutoriel.
+Validation : déploiement, exposition et rollback sans tutoriel. ✅ Défi final réussi (08-defi-jour1/).
 
 ## Jour 2 — Kubernetes : configuration et dépannage  [ ]
 - [ ] ConfigMaps, Secrets, variables d'environnement
@@ -123,3 +123,5 @@ Validation : défendre le projet et résoudre un incident simple.
 ## Journal
 - 19/10 : bilan de départ, début Jour 1 → Ex. 1 ReplicaSet validé ; Ex. 2 validé ; Ex. 3 validé (intrus supprimé puis adopté) ; Ex. 4 validé. Question n°1 validée. web-rs nettoyé. Ex. 5 scale 3→5 vérifié (4/4 prédictions). Déclaratif vs impératif compris. Ex. 6 rolling update validé. Ex. 7 rollback validé (+ dérive corrigée, last-applied-configuration). Commit 4aae261 poussé. Révision : notes.md, commandes.md, revision/resume-kubernetes.pdf mis à jour. REPRISE : Ex. 8 Service ClusterIP (06-services/service-clusterip.yaml, monsite-svc, selector app: monsite, port 80 → targetPort 80).
 - 20/10 : Ex. 8 ClusterIP monsite-svc validé (5 Endpoints, test busybox + DNS). Ex. 9 NodePort 30080 validé (curl depuis le PC). Ex. 10 port-forward + panne d'un Pod validé (Endpoints .19→.25, port-forward lié à un seul Pod). Questions d'entretien Jour 1 validées (Q1–Q5 + 2 cas concrets). REPRISE 21/10 : défi final sans aide (07-defi-jour1/ : Deployment boutique httpd:2.4 ×3, Service NodePort boutique-svc 30090, rolling update httpd:2.4-alpine, rollback, fichier remis d'accord, site testé).
+- 24/10 : décision de REFAIRE le Jour 1 complet de zéro avant le défi final (dossier 07-revision-jour1/, appli « vitrine », solutions expliquées commande par commande, cluster nettoyé). Défi final ensuite dans 08-defi-jour1/, sans aide.
+- 25/10 : révision étape 0 validée (minikube redémarré, monsite + 2 Services supprimés, il ne reste que service/kubernetes ; 3 questions : etcd/réconciliation, cascade ownerReferences, Service kubernetes). Étape 1 validée (Pod seul vitrine : pas de Controlled By, non recréé ; scheduler vs kubelet ; IP de Pod temporaire). Étape 2 validée (Deployment vitrine ×3, Pod supprimé remplacé par un nouveau, selector ≠ labels refusé, testé avec --dry-run=server). Étape 3 validée (Controlled By sur Pod et RS, pod-template-hash, -l). Étape 4 validée (scale 3→5 déclaratif, kubectl diff, dérive, hash = template seulement). Étape 5 validée (rolling update 1.27 → 1.28, rollout status, 2 ReplicaSets, maxSurge/maxUnavailable, image inexistante). Étape 6 validée (rollout history/undo, révision 1 → 3, dérive corrigée : fichier + last-applied-configuration vérifiée en jsonpath). Étape 7 validée (ClusterIP vitrine-svc, Endpoints, test busybox par le nom DNS). Étape 8 validée (NodePort vitrine-nodeport 30080, curl depuis le PC, limites du NodePort en prod). Étape 9 validée (port-forward cassé par la suppression du Pod, NodePort toujours OK, Endpoints .21 → .27). Étape 10 validée (mini-entretien 5 questions). RÉVISION JOUR 1 TERMINÉE. Défi final commencé (08-defi-jour1/README.md). Défi étape 0 OK (delete -f 07-revision-jour1/). commandes.md complété avec les commandes de la révision. Pause. 26/10 : défi étape 1 OK (Deployment boutique httpd:2.4 3/3, RS boutique-68f55567b7). Défi étape 2 OK (service-boutique.yaml, NodePort 30090, 3 Endpoints). Défi étape 3 OK (It works! sur :30090). Défi étape 4 OK (rolling update → RS 6dc98d9795 httpd:2.4-alpine 3/3, ancien 68f55567b7 à 0). Défi étape 5 OK (rollback → RS 68f55567b7 httpd:2.4 3/3). Défi étape 6 OK (fichier remis en httpd:2.4, diff vide, apply, last-applied vérifiée). Défi étape 7 OK (It works! après rollback). 3 questions de fin réussies. ✅ JOUR 1 VALIDÉ. REPRISE : Jour 2 (ConfigMaps, Secrets, variables d'environnement).

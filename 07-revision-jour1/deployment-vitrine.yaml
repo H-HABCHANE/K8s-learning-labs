@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vitrine
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: vitrine
+  template:
+    metadata:
+      labels:
+        app: vitrine
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.27
+        ports:
+        - containerPort: 80

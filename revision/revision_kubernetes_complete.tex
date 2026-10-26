@@ -1,0 +1,899 @@
+% Révision Kubernetes complète - Hicham Habchane
+% Compilation : pdflatex revision_kubernetes_complete.tex (deux fois)
+%           ou : tectonic revision_kubernetes_complete.tex
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[utf8]{inputenc}
+  \usepackage[T1]{fontenc}
+  \usepackage{lmodern}
+\else
+  \usepackage{fontspec}
+\fi
+\usepackage[french]{babel}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{needspace}
+\usepackage[hidelinks]{hyperref}
+
+% ---------- Mise en page ----------
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+\setlist{nosep, leftmargin=*, topsep=2pt}
+\renewcommand{\arraystretch}{1.2}
+
+\titleformat{\section}{\needspace{12\baselineskip}\Large\bfseries}{\thesection.}{0.6em}{}[\vspace{-2pt}\rule{\linewidth}{0.4pt}]
+\titleformat{\subsection}{\needspace{6\baselineskip}\large\bfseries}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{14pt}{8pt}
+\titlespacing*{\subsection}{0pt}{10pt}{4pt}
+\titlespacing*{\subsubsection}{0pt}{8pt}{2pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Révision Kubernetes}
+\fancyhead[R]{\small\nouppercase{\leftmark}}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+
+% ---------- Blocs de code ----------
+\definecolor{fondcode}{gray}{0.95}
+\definecolor{commentaire}{gray}{0.40}
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{fondcode},
+  frame=single, rulecolor=\color{black!25}, framesep=3pt,
+  commentstyle=\color{commentaire}\itshape,
+  morecomment=[l]{\#},
+  columns=fullflexible, keepspaces=true,
+  breaklines=true, breakatwhitespace=false,
+  postbreak=\mbox{\textcolor{commentaire}{$\hookrightarrow$}\space},
+  xleftmargin=3pt, xrightmargin=3pt,
+  aboveskip=4pt, belowskip=4pt,
+  upquote=true
+}
+\ifPDFTeX
+\lstset{literate=
+  {é}{{\'e}}1 {è}{{\`e}}1 {ê}{{\^e}}1 {ë}{{\"e}}1
+  {à}{{\`a}}1 {â}{{\^a}}1 {ù}{{\`u}}1 {û}{{\^u}}1
+  {ô}{{\^o}}1 {î}{{\^i}}1 {ï}{{\"i}}1 {ç}{{\c c}}1
+  {É}{{\'E}}1 {È}{{\`E}}1 {À}{{\`A}}1 {Ç}{{\c C}}1
+  {œ}{{\oe}}1 {°}{{\textdegree}}1
+}
+\fi
+% Un bloc de code n'est jamais coupé entre deux pages
+\lstnewenvironment{code}{\endgraf\noindent\minipage{\linewidth}}{\endminipage\endgraf\smallskip}
+
+% ---------- Raccourcis ----------
+\newcommand{\cmd}[1]{\texttt{\hyphenchar\font=`\-#1}}
+\setlength{\emergencystretch}{3em}
+\newcommand{\tp}{\textsc{[tp]}}
+\newcommand{\compl}{\textsc{[complément]}}
+\newcommand{\QR}[2]{\needspace{4\baselineskip}\par\noindent\textbf{Q.~}#1\par\nopagebreak\noindent\textbf{R.~}#2\par\medskip}
+\newcommand{\retenir}[1]{\par\smallskip\noindent\fbox{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{\textbf{À retenir.} #1}}\par\smallskip}
+\newcommand{\partie}[1]{\needspace{9\baselineskip}\subsection*{#1}}
+\newcommand{\exo}[1]{\needspace{8\baselineskip}\subsubsection*{#1}}
+
+\begin{document}
+
+% =====================================================================
+\begin{titlepage}
+\centering
+\vspace*{5cm}
+{\Huge\bfseries Kubernetes\par}
+\vspace{0.4cm}
+{\Large Support de révision personnel\par}
+\vspace{0.3cm}
+{\large Du Pod aux Services : cours, commandes, TP et questions d'entretien\par}
+\vspace{1.5cm}
+\rule{0.6\linewidth}{0.4pt}\par
+\vspace{0.8cm}
+{\large Hicham Habchane\par}
+\vspace{0.2cm}
+Master 2 --- Préparation à un entretien de stage DevOps\par
+\vfill
+{\small Cluster d'apprentissage : minikube v1.39.0 (driver docker), Kubernetes v1.37.0, kubectl v1.37.1\par
+Ubuntu 26.04, Docker 29.9\par
+\vspace{0.3cm}
+Contenu arrêté au 20 octobre 2026 (Programme DevOps, Jour 1, avant le défi final)\par}
+\end{titlepage}
+
+\tableofcontents
+\clearpage
+
+% =====================================================================
+\section*{Comment lire ce document}
+\addcontentsline{toc}{section}{Comment lire ce document}
+
+\textbf{Sources utilisées.} Les README de chaque dossier (\cmd{01-bases} à \cmd{06-services}), les fichiers YAML du projet, mes notes personnelles, \cmd{commandes.md}, \cmd{PROGRESSION\_DEVOPS.md} et l'historique de nos sessions.
+
+\textbf{Repères.}
+\begin{itemize}
+  \item \tp{} : réellement fait ou réellement posé pendant les TP.
+  \item \compl{} : notion, question ou commande ajoutée pour l'entretien, \emph{pas encore pratiquée}.
+\end{itemize}
+
+\textbf{Ce qui n'est pas encore fait.}
+\begin{itemize}
+  \item Le défi final du Jour 1, \emph{sans aide} : Deployment \cmd{boutique} (\cmd{httpd:2.4}, 3 replicas), Service NodePort sur 30090, rolling update vers \cmd{httpd:2.4-alpine}, rollback, fichier remis d'accord avec le cluster, site testé. Le Jour 1 n'est donc \emph{pas encore validé}.
+  \item ConfigMaps, Secrets, probes, ressources, volumes, Ingress (Jour 2 et suivants).
+\end{itemize}
+
+\textbf{Informations partielles.} Les sorties complètes des toutes premières séances (installation) ne sont plus toutes disponibles. Seuls les résultats notés dans les README sont repris ici. Lorsqu'une commande a été discutée sans que son exécution soit attestée, c'est indiqué.
+
+\textbf{Le fil conducteur : le restaurant.}
+\begin{center}
+\begin{tabularx}{0.92\linewidth}{@{}lX@{}}
+\toprule
+\textbf{Kubernetes} & \textbf{Analogie} \\
+\midrule
+Conteneur & le plat \\
+Pod & le plateau qui porte le plat \\
+ReplicaSet & le chef d'équipe qui compte les plateaux \\
+Deployment & le responsable de salle (il change aussi la vaisselle en plein service) \\
+template & la fiche recette \\
+labels & l'autocollant collé sur chaque plateau \\
+Service & l'accueil du restaurant \\
+Nœud / cluster & une cuisine / le restaurant entier \\
+Kubernetes / kubectl & le gérant / la télécommande \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% =====================================================================
+\section{Kubernetes et son architecture}
+
+\partie{A. Résumé du cours}
+\textbf{Docker} met une application dans un conteneur et le lance. Si ce conteneur plante, personne ne le relance.
+\textbf{Kubernetes} orchestre les conteneurs : il les lance, les multiplie, les surveille, les relance et les répartit sur des machines.
+Les deux ne sont pas concurrents : Kubernetes fait tourner des conteneurs.
+
+\textbf{L'état souhaité} est l'idée centrale. Je ne donne pas un ordre (« lance un conteneur ») : je \emph{décris} ce que je veux (« toujours 3 nginx »). Kubernetes compare en permanence la réalité à cette description et corrige les écarts : c'est la \emph{boucle de réconciliation}.
+
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}lXX@{}}
+\toprule
+ & \textbf{Docker} & \textbf{Kubernetes} \\
+\midrule
+Rôle & crée et lance des conteneurs & organise et surveille beaucoup de conteneurs \\
+Conteneur qui plante & reste arrêté & recréé automatiquement \\
+Plusieurs copies & à la main & « je veux 5 copies » \\
+Échelle & une machine & un cluster (une ou plusieurs machines) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\textbf{Les composants réellement observés.}
+\begin{itemize}
+  \item \textbf{API server} : la porte d'entrée du cluster. \cmd{kubectl} lui parle en HTTPS. Dans le cluster, il est joignable via le Service \cmd{kubernetes} (\cmd{10.96.0.1:443}).
+  \item \textbf{default-scheduler} : choisit le nœud où placer chaque Pod (vu dans \cmd{describe pod}).
+  \item \textbf{kubelet} : sur chaque nœud, télécharge l'image et démarre les conteneurs.
+  \item \textbf{containerd} : le moteur de conteneurs utilisé par minikube (et non Docker).
+  \item \textbf{Contrôleurs} (\cmd{replicaset-controller}, \cmd{deployment-controller}) : ils appliquent la boucle de réconciliation (vus dans les \cmd{Events}).
+  \item \textbf{CoreDNS} : le DNS du cluster, qui traduit un nom de Service en IP. C'est un Pod du namespace \cmd{kube-system}.
+\end{itemize}
+\compl{} Les autres composants du control-plane sont \textbf{etcd} (la base qui stocke l'état du cluster) et le \textbf{controller-manager} (il regroupe les contrôleurs). \textbf{kube-proxy} programme, sur chaque nœud, la redirection du trafic des Services.
+
+\partie{B. Commandes importantes}
+\begin{code}
+docker run -d --name monsite nginx   # lance un conteneur nginx en arrière-plan
+docker ps                            # liste les conteneurs en marche
+docker kill monsite                  # arrête brutalement le conteneur (panne simulée)
+docker rm monsite                    # supprime le conteneur arrêté
+\end{code}
+
+\partie{C. Exercices pratiques}
+\exo{Exercice : le problème de Docker seul \tp}
+\textbf{Objectif.} Montrer que Docker ne relance pas un conteneur tombé.\\
+\textbf{Commandes.} \cmd{docker run}, \cmd{docker ps}, \cmd{docker kill}, \cmd{docker ps}, \cmd{docker rm}.\\
+\textbf{Résultat.} Après \cmd{docker kill}, \cmd{monsite} disparaît de \cmd{docker ps} et personne ne le relance.\\
+\textbf{Appris.} Il faut un « gérant » qui surveille et corrige : c'est le rôle de Kubernetes.
+
+\partie{D. Questions et réponses \tp}
+\QR{Quelle est la différence entre Docker et Kubernetes ?}{Docker crée et lance les conteneurs ; Kubernetes les organise : il les lance, les multiplie, les surveille, les relance automatiquement et les répartit sur les machines.}
+\QR{Qu'est-ce que l'état souhaité ?}{Je décris ce que je veux en permanence (« toujours 3 nginx ») et Kubernetes s'arrange pour que la réalité y corresponde.}
+\QR{D'après la colonne \cmd{From} de \cmd{describe pod}, qui choisit le nœud où placer le Pod ?}{Le \cmd{default-scheduler}. Le kubelet, lui, télécharge l'image et démarre le conteneur.}
+\QR{À quoi sert le Service \cmd{kubernetes} (port 443), que je n'ai pas créé ?}{C'est l'accès à l'API server, en HTTPS. Kubernetes le crée lui-même ; les Pods qui veulent parler à l'API passent par lui. Il ne faut pas le supprimer.}
+
+\partie{E. Erreurs et dépannage}
+\begin{itemize}
+  \item \textbf{Confusion kubectl / Kubernetes.} J'ai d'abord dit que kubectl « déploie et surveille ». Correction : kubectl n'est que la télécommande ; c'est Kubernetes qui déploie et maintient les répliques.
+\end{itemize}
+
+% =====================================================================
+\section{Minikube et kubectl}
+
+\partie{A. Résumé du cours}
+\textbf{minikube} crée un petit cluster Kubernetes sur mon PC, à l'intérieur d'un conteneur Docker : c'est un restaurant miniature pour s'entraîner.
+\textbf{kubectl} est la télécommande en ligne de commande : il envoie mes demandes à l'API server.
+Mon cluster a \textbf{un seul nœud}, \cmd{minikube}, qui pilote le cluster (control-plane) et fait tourner les applications. Ce n'est pas un cluster de production : pas de haute disponibilité.
+
+\partie{B. Commandes importantes}
+\begin{code}
+kubectl version --client          # version de kubectl (v1.37.1)
+minikube version                  # version de minikube (v1.39.0)
+minikube start --driver=docker    # crée ou rallume le cluster dans un conteneur Docker
+minikube start                    # rallume le cluster après un redémarrage du PC
+minikube status                   # host / kubelet / apiserver : Running ou Stopped
+minikube stop                     # éteint le cluster (libère la RAM, garde les objets)
+minikube ip                       # IP du nœud (192.168.49.2), utile pour NodePort
+kubectl get nodes                 # liste les nœuds ; attendre STATUS = Ready
+\end{code}
+
+\partie{C. Exercices pratiques}
+\exo{Installation sans sudo \tp}
+\textbf{Objectif.} Installer les outils et démarrer un cluster.\\
+\textbf{Résultat.} kubectl v1.37.1 et minikube v1.39.0 installés dans \cmd{\textasciitilde/.local/bin}, vérifiés par somme de contrôle sha256. \cmd{minikube start --driver=docker} lance un cluster Kubernetes v1.37.0.\\
+\textbf{Observé.} Le nœud est \cmd{NotReady} quelques secondes au démarrage, puis \cmd{Ready}.\\
+\textbf{Appris.} Après chaque redémarrage du PC, le cluster est éteint : toujours commencer par \cmd{minikube start} puis \cmd{kubectl get nodes}.
+
+\partie{D. Questions et réponses \tp}
+\QR{À quoi sert kubectl ?}{C'est la télécommande en ligne de commande qui envoie mes demandes au cluster (à l'API server). Ce n'est pas lui qui fait le travail.}
+\QR{Combien de nœuds a mon cluster et quel est leur rôle ?}{Un seul, \cmd{minikube} : il pilote le cluster (control-plane) et exécute les applications.}
+
+\partie{E. Erreurs et dépannage}
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{4.2cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{4.2cm}@{}}
+\toprule
+\textbf{Symptôme} & \textbf{Cause} & \textbf{Correction} \\
+\midrule
+\cmd{no route to host} ou \cmd{connection refused} & cluster éteint après le redémarrage du PC & \cmd{minikube status} puis \cmd{minikube start} \\
+Nœud \cmd{NotReady} & le nœud démarre encore & attendre, relancer \cmd{kubectl get nodes} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% =====================================================================
+\section{Les Pods}
+
+\partie{A. Résumé du cours}
+Un \textbf{Pod} est la plus petite unité gérée par Kubernetes : une enveloppe autour d'un conteneur (parfois plusieurs, qui partagent le même réseau et se parlent par \cmd{localhost}).
+Il a un nom et une IP \emph{interne} au cluster.
+Un Pod est \textbf{jetable} : s'il meurt, on ne le répare pas, on en crée un nouveau (nouveau nom, nouvelle IP). Un Pod créé seul n'est \emph{jamais} relancé.
+
+\textbf{Un fichier YAML a 4 parties.}
+\begin{center}
+\begin{tabularx}{0.9\linewidth}{@{}lX@{}}
+\toprule
+\cmd{apiVersion} & version de l'API : \cmd{v1} (Pod, Service), \cmd{apps/v1} (Deployment, ReplicaSet) \\
+\cmd{kind} & type d'objet : Pod, Deployment, Service\ldots \\
+\cmd{metadata} & nom et étiquettes \\
+\cmd{spec} & ce que je veux exactement \\
+\bottomrule
+\end{tabularx}
+\end{center}
+En YAML, l'indentation compte : uniquement des espaces, jamais de tabulations.
+
+\textbf{RESTARTS.} Cette colonne compte les redémarrages du \emph{conteneur}, pas du Pod. Même nom et même AGE avec \cmd{RESTARTS 1} : le conteneur a redémarré (par exemple après \cmd{minikube stop/start}). Un nouveau nom signifie au contraire que le Pod a été remplacé.
+
+\partie{B. Commandes importantes}
+\begin{code}
+kubectl apply -f 02-pods/pod-nginx.yaml   # envoie l'état souhaité (created)
+kubectl get pods                          # NAME, READY, STATUS, RESTARTS, AGE
+kubectl get pods -o wide                  # ajoute l'IP et le nœud
+kubectl describe pod mon-premier-pod      # fiche détaillée, Events en bas
+kubectl logs mon-premier-pod              # sortie du conteneur (comme docker logs)
+kubectl delete pod mon-premier-pod        # supprime le Pod
+\end{code}
+
+\partie{C. Exercices pratiques}
+\exo{Créer, inspecter puis supprimer un Pod seul \tp}
+\textbf{Fichier \cmd{02-pods/pod-nginx.yaml}.}
+\begin{code}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mon-premier-pod
+  labels:
+    app: monsite
+spec:
+  containers:
+    - name: nginx
+      image: nginx
+      ports:
+        - containerPort: 80
+\end{code}
+\textbf{Résultats.}
+\begin{itemize}
+  \item \cmd{apply} affiche \cmd{pod/mon-premier-pod created}. À 10 s : \cmd{READY 0/1}, \cmd{ContainerCreating} (téléchargement de l'image). À 21 s : \cmd{1/1 Running}.
+  \item \cmd{describe} : IP \cmd{10.244.0.3} ; 5 Events \cmd{Scheduled}, \cmd{Pulling}, \cmd{Pulled}, \cmd{Created}, \cmd{Started}.
+  \item \cmd{logs} : ligne \cmd{Configuration complete; ready for start up}. Les heures des logs sont en UTC.
+  \item Après \cmd{delete}, \cmd{get pods} répond \cmd{No resources found} : le Pod ne revient pas.
+\end{itemize}
+\textbf{Appris.} \cmd{created} ne veut pas dire « en marche ». Un Pod seul n'a personne pour le surveiller.
+
+\partie{D. Questions et réponses \tp}
+\QR{Kubernetes gère-t-il des Pods ou des conteneurs ?}{Des Pods. Il ne gère jamais un conteneur « tout nu ».}
+\QR{Si un Pod meurt, que se passe-t-il ?}{Il n'est pas réparé. Si un contrôleur le gère, celui-ci en crée un nouveau, avec un nouveau nom et une nouvelle IP.}
+\QR{Quelle est l'IP de ton Pod ?}{\cmd{10.244.0.3}, une adresse interne au cluster.}
+\QR{Combien de lignes dans Events, et quelle est la dernière ?}{5 lignes ; la dernière est \cmd{Started}.}
+\QR{Quelle commande Docker fait la même chose que \cmd{kubectl logs} ?}{\cmd{docker logs}.}
+\QR{Quelle ligne montre que nginx est prêt ?}{\cmd{Configuration complete; ready for start up}.}
+\QR{Après \cmd{kubectl delete pod}, le Pod revient-il ? Pourquoi ?}{Non : il faut un Deployment pour le relancer. Un Pod seul n'a pas de contrôleur.}
+\QR{Les Pods ont gardé leur nom mais \cmd{RESTARTS} est passé de 0 à 1 : qu'est-ce qui a redémarré ?}{Le conteneur, pas le Pod. L'objet Pod est conservé (même nom, même AGE) ; ses conteneurs ont été relancés au redémarrage de minikube.}
+
+\partie{E. Erreurs et dépannage}
+\begin{itemize}
+  \item \textbf{Croire que \cmd{created} = \cmd{Running}.} Il faut vérifier avec \cmd{kubectl get pods} et attendre \cmd{Running}.
+  \item \textbf{Heure des logs décalée.} Les logs sont en UTC.
+\end{itemize}
+
+% =====================================================================
+\section{Les Deployments}
+
+\partie{A. Résumé du cours}
+Un \textbf{Deployment} surveille les Pods pour moi : « je veux toujours 3 Pods nginx ». S'il en manque un, il en recrée un.
+Il ne gère pas les Pods directement. La chaîne est \textbf{Deployment $\rightarrow$ ReplicaSet $\rightarrow$ Pods}.
+Il apporte en plus les mises à jour progressives (rolling update) et le retour arrière (rollback).
+
+\begin{itemize}
+  \item \cmd{replicas} : le nombre de Pods voulus.
+  \item \cmd{template} : la recette de chaque Pod (conteneurs, image, ports, étiquettes).
+  \item \cmd{selector.matchLabels} : l'étiquette qui permet de reconnaître « ses » Pods. Elle doit correspondre aux \cmd{labels} du template, sinon le fichier est refusé.
+\end{itemize}
+
+\textbf{Nom d'un Pod :} \cmd{monsite-86f69f946d-4vcxz}. On y lit le nom du Deployment, puis le hash du template (qui identifie le ReplicaSet, identique pour tous les Pods d'une même version), puis l'identifiant unique du Pod.
+
+\partie{B. Commandes importantes}
+\begin{code}
+kubectl apply -f 04-deployments/deployment-nginx.yaml   # crée ou met à jour
+kubectl get deployments                  # READY 3/3 = 3 Pods prêts sur 3 voulus
+kubectl get deployments,replicasets,pods # les trois niveaux en une commande
+kubectl describe deployment monsite      # stratégie, Events Scaled up/down
+kubectl delete pod <nom-d-un-pod>        # panne simulée : un remplaçant arrive
+\end{code}
+
+\partie{C. Exercices pratiques}
+\exo{Créer le Deployment \cmd{monsite} \tp}
+\textbf{Fichier \cmd{04-deployments/deployment-nginx.yaml}} (état actuel : 5 replicas, image \cmd{nginx}).
+\begin{code}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monsite
+spec:
+  replicas: 5            # 3 au départ, passé à 5 à l'exercice 5
+  selector:
+    matchLabels:
+      app: monsite
+  template:
+    metadata:
+      labels:
+        app: monsite
+    spec:
+      containers:
+        - name: nginx
+          image: nginx
+          ports:
+            - containerPort: 80
+\end{code}
+\textbf{Résultats.} \cmd{deployment.apps/monsite created} ; \cmd{READY 3/3} en 8 s ; 3 Pods \cmd{monsite-86f69f946d-xxxxx}, avec la même série du milieu.
+
+\exo{Supprimer un Pod géré par le Deployment \tp}
+\textbf{Commande.} \cmd{kubectl delete pod monsite-86f69f946d-f56w5}.\\
+\textbf{Résultat.} Toujours 3 Pods : \cmd{f56w5} a disparu et un nouveau Pod \cmd{4vcxz} est apparu (AGE 9 s, contre 4 min 47 s pour les autres). Il porte le même hash, donc le même ReplicaSet.\\
+\textbf{Appris.} Contrairement à \cmd{docker kill} et au Pod seul, le Pod est remplacé automatiquement.
+
+\partie{D. Questions et réponses \tp}
+\QR{Que veut dire \cmd{replicas: 3} ?}{Le nombre de Pods identiques que Kubernetes maintient en permanence ; si un Pod plante ou est supprimé, il en recrée un.}
+\QR{À quoi sert la partie \cmd{template} ?}{C'est la recette de chaque Pod : conteneurs, image, ports et étiquettes sont copiés dans chaque nouveau Pod.}
+\QR{Comment le Deployment sait-il quels Pods sont les siens ?}{Grâce au \cmd{selector} (\cmd{matchLabels: app: monsite}), qui doit correspondre aux étiquettes du template.}
+\QR{Combien de Pods vois-tu ? Que remarques-tu sur leurs noms ?}{3 Pods. Ils commencent tous par \cmd{monsite} ; la série du milieu est identique (la version du template), seule la dernière change.}
+\QR{Après la suppression de \cmd{f56w5} : combien de Pods ? Y a-t-il un nouveau nom ? Comment le reconnaître ?}{Toujours 3 ; \cmd{f56w5} a disparu, remplacé par un Pod au nouveau suffixe, reconnaissable à son AGE très faible.}
+
+% =====================================================================
+\section{Les ReplicaSets et les replicas}
+
+\partie{A. Résumé du cours}
+Un \textbf{ReplicaSet} a une seule mission : garder N Pods identiques en marche. Il compte les Pods qui portent \emph{son étiquette} et ne regarde \emph{que} les étiquettes, jamais « qui a créé le Pod ».
+\begin{itemize}
+  \item S'il y a trop de Pods, il en supprime. L'ordre : d'abord les Pods non placés, puis les non prêts, puis ceux prêts depuis le moins longtemps.
+  \item S'il trouve un Pod orphelin qui porte la bonne étiquette, il l'\textbf{adopte}.
+  \item \textbf{Limite} : si l'image du template change, les Pods existants \emph{ne changent pas}. Il ne vérifie que le nombre.
+\end{itemize}
+Règle : un sélecteur = un seul contrôleur. En pratique, on n'écrit jamais de ReplicaSet à la main : on écrit un Deployment.
+
+\partie{B. Commandes importantes}
+\begin{code}
+kubectl get replicasets                    # DESIRED / CURRENT / READY
+kubectl describe replicaset <nom>          # Controlled By, Selector, Events
+kubectl get pods -l app=web                # filtre par étiquette (-l)
+kubectl describe pod intrus                # Controlled By: ReplicaSet/web-rs
+kubectl delete replicaset web-rs           # supprime le ReplicaSet ET ses Pods
+kubectl get pods -o custom-columns=NOM:.metadata.name,IMAGE:.spec.containers[0].image
+\end{code}
+
+\partie{C. Exercices pratiques}
+\exo{Exercice 1 : le ReplicaSet créé par le Deployment \tp}
+\textbf{Résultats.} \cmd{monsite-86f69f946d} : DESIRED 3, CURRENT 3, READY 3. Dans \cmd{describe} : \cmd{Controlled By: Deployment/monsite}, et \cmd{Selector: app=monsite,pod-template-hash=86f69f946d}. Le Deployment ajoute l'étiquette \cmd{pod-template-hash} pour séparer les versions.
+
+\exo{Exercice 2 : écrire un ReplicaSet à la main \tp}
+\textbf{Fichier \cmd{05-replicasets/replicaset-web.yaml}} (écrit seul ; image passée à \cmd{nginx:1.27} à l'exercice 4).
+\begin{code}
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: web-rs
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27
+          ports:
+            - containerPort: 80
+\end{code}
+\textbf{Résultat.} Pods \cmd{web-rs-ktz59} et \cmd{web-rs-pjdsm}, sans hash au milieu du nom.
+
+\exo{Exercice 3A : le Pod intrus \tp}
+\textbf{Fichier \cmd{pod-intrus.yaml}} : un Pod \cmd{intrus}, étiquette \cmd{app: web}, créé alors que \cmd{web-rs} a déjà ses 2 Pods.\\
+\textbf{Résultat.} Event \cmd{SuccessfulDelete \ldots Deleted pod: intrus} : le ReplicaSet a compté 3 Pods \cmd{app=web} et en a supprimé un.
+
+\exo{Exercice 3B : prouver l'adoption \tp}
+\begin{code}
+kubectl delete replicaset web-rs
+kubectl apply -f 05-replicasets/pod-intrus.yaml       # l'intrus d'abord
+kubectl apply -f 05-replicasets/replicaset-web.yaml   # puis le ReplicaSet
+kubectl get pods -l app=web                           # intrus + 1 seul nouveau Pod
+kubectl describe pod intrus                           # Controlled By: ReplicaSet/web-rs
+\end{code}
+\textbf{Appris.} Le ReplicaSet adopte un Pod orphelin qui porte son étiquette.
+
+\exo{Exercice 4 : la limite du ReplicaSet \tp}
+Changement de l'image en \cmd{nginx:1.27} dans le fichier, puis \cmd{apply} : \cmd{configured}, mais les Pods existants restent en \cmd{nginx}.
+Pour forcer la mise à jour, il faut supprimer les Pods un par un. Pendant ce temps, \cmd{nginx} et \cmd{nginx:1.27} tournent en même temps.
+
+\begin{center}
+\begin{tabularx}{0.92\linewidth}{@{}Xcc@{}}
+\toprule
+ & \textbf{ReplicaSet seul} & \textbf{Deployment} \\
+\midrule
+Maintenir N Pods & oui & oui (via un ReplicaSet) \\
+Mettre à jour l'image des Pods existants & non (à la main) & oui (rolling update) \\
+Historique et retour arrière & non & oui \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\partie{D. Questions et réponses \tp}
+\QR{Le nom \cmd{monsite-86f69f946d} est composé de quoi ?}{Du nom du Deployment (\cmd{monsite}) et du hash du template du Pod.}
+\QR{Quelle ligne de \cmd{describe} prouve que ce ReplicaSet appartient au Deployment \cmd{monsite} ?}{\cmd{Controlled By: Deployment/monsite}.}
+\QR{Les Pods de \cmd{web-rs} ont-ils un hash au milieu de leur nom ? Pourquoi ?}{Non. C'est le Deployment qui ajoute \cmd{pod-template-hash} ; ici le ReplicaSet a été créé directement.}
+\QR{Quelles lignes as-tu changées par rapport au Deployment ?}{\cmd{kind} (ReplicaSet), le nom (\cmd{web-rs}), \cmd{replicas} (2) et l'étiquette \cmd{app: web} dans le selector \emph{et} le template. \cmd{apiVersion} reste \cmd{apps/v1}.}
+\QR{Pourquoi ne fallait-il pas utiliser \cmd{app: monsite} ?}{Pour éviter que deux contrôleurs se disputent les mêmes Pods. Un sélecteur = un seul contrôleur.}
+\QR{Que fait le ReplicaSet quand l'intrus (\cmd{app: web}) apparaît ?}{Il en supprime un pour revenir à 2 ; c'est l'intrus, le plus récent, qui est supprimé.}
+\QR{L'intrus n'a pas été créé par \cmd{web-rs}, et pourtant il a été supprimé. Qu'est-ce que ça t'apprend ?}{Le ReplicaSet reconnaît ses Pods uniquement par leurs étiquettes.}
+\QR{Si l'intrus existe \emph{avant} \cmd{web-rs} (replicas 2), combien de nouveaux Pods sont créés ?}{Un seul : le ReplicaSet adopte l'intrus.}
+\QR{Quelle ligne prouve l'adoption ?}{\cmd{Controlled By: ReplicaSet/web-rs} dans \cmd{describe pod intrus}.}
+\QR{Après le passage à \cmd{nginx:1.27} dans le ReplicaSet, quelle image ont les Pods existants ?}{Toujours \cmd{nginx} : le nouveau template ne sert qu'aux Pods créés ensuite.}
+\QR{Avec un ReplicaSet seul, comment forcer le passage à \cmd{nginx:1.27} ?}{En supprimant les Pods : il les recrée avec la nouvelle recette.}
+\QR{Avec 50 Pods en production, quel problème ?}{Une coupure du site si on les supprime tous d'un coup. Un par un, c'est long, manuel et sans historique : c'est le travail du Deployment.}
+\QR{Deux versions tournent en même temps : quel problème pour un visiteur ?}{Il voit une version différente selon le Pod qui lui répond. C'est aussi le cas pendant un rolling update : les versions doivent rester compatibles.}
+
+% =====================================================================
+\section{Le scaling}
+
+\partie{A. Résumé du cours}
+Changer \cmd{replicas} change seulement le \emph{nombre} de Pods. Comme \cmd{replicas} n'est pas dans le template, le hash ne change pas : même ReplicaSet, seul son DESIRED change, et les Pods existants sont conservés.
+Deux façons de faire :
+\begin{itemize}
+  \item \textbf{déclarative} (bonne pratique) : modifier le fichier, puis \cmd{apply}. Le fichier, versionné dans Git, fait foi ;
+  \item \textbf{impérative} : \cmd{kubectl scale}. Le cluster change, mais pas le fichier, ce qui crée une \textbf{dérive}.
+\end{itemize}
+
+\partie{B. Commandes importantes}
+\begin{code}
+sed -i 's/replicas: 3/replicas: 5/' 04-deployments/deployment-nginx.yaml
+grep replicas 04-deployments/deployment-nginx.yaml     # vérifier la modification
+kubectl apply -f 04-deployments/deployment-nginx.yaml  # configured
+kubectl scale deployment monsite --replicas=2          # impératif (dérive)
+\end{code}
+
+\partie{C. Exercices pratiques}
+\exo{Exercice 5 : passer de 3 à 5 replicas \tp}
+\textbf{Résultats.} \cmd{configured} ; 5/5 ; les 3 anciens Pods gardent leur nom (\cmd{4vcxz}, \cmd{kfrzp}, \cmd{kjxxs}) et 2 nouveaux arrivent (\cmd{85k7z}, \cmd{gdk8x}). Le ReplicaSet reste \cmd{86f69f946d}, avec DESIRED 5.
+
+\exo{Déclaratif ou impératif (discussion) \tp}
+Le cas \cmd{kubectl scale --replicas=2} a été étudié par prédiction ; son exécution n'est pas attestée dans mes notes.
+
+\partie{D. Questions et réponses \tp}
+\QR{Passage à 5 replicas : combien de Pods ? Les anciens gardent-ils leur nom ? Quel mot affiche \cmd{apply} ?}{5 Pods (3 anciens et 2 nouveaux) ; les anciens gardent leur nom, car on change le nombre, pas la recette ; \cmd{apply} affiche \cmd{configured}.}
+\QR{Même ReplicaSet ou nouveau ?}{Le même : \cmd{replicas} n'est pas dans le template, donc le hash ne change pas.}
+\QR{Après \cmd{kubectl scale --replicas=2}, le fichier dit 5. Un collègue relance \cmd{apply} : que se passe-t-il ?}{Le cluster revient à 5 Pods ; la modification est perdue sans prévenir. C'est la dérive (drift).}
+\QR{Quelle est la meilleure pratique ?}{Le déclaratif : modifier le fichier, puis \cmd{apply}. \cmd{kubectl scale} reste utile en urgence, à condition de reporter ensuite le changement dans le fichier.}
+
+% =====================================================================
+\section{Rolling updates et rollbacks}
+
+\partie{A. Résumé du cours}
+\textbf{Rolling update.} Modifier le template (par exemple l'image) crée un \emph{nouveau} ReplicaSet, c'est-à-dire une nouvelle \emph{révision}. Il monte petit à petit pendant que l'ancien descend : il n'y a pas de coupure.
+\begin{itemize}
+  \item \textbf{maxSurge 25\,\%} (arrondi au-dessus) : sur 5 Pods, 2 Pods \emph{en plus} sont autorisés, donc jusqu'à 7.
+  \item \textbf{maxUnavailable 25\,\%} (arrondi au-dessous) : au plus 1 Pod indisponible, donc au moins 4 disponibles.
+\end{itemize}
+
+\textbf{Rollback.} \cmd{rollout undo} \emph{réutilise l'ancien ReplicaSet}, avec des Pods neufs. C'est un nouveau déploiement : la révision 1 devient la révision 3. Une révision = un ReplicaSet ; c'est pour cela que les anciens ReplicaSets sont gardés à 0.
+
+\textbf{Dérive après rollback.} \cmd{undo} ne modifie pas le fichier. Il faut remettre le fichier d'accord avec le cluster, sinon le prochain \cmd{apply} réinstalle la mauvaise version.
+\cmd{apply} garde une mémoire du dernier fichier appliqué (annotation \cmd{kubectl.kubernetes.io/last-applied-configuration}), que \cmd{undo} ne met pas à jour.
+
+\partie{B. Commandes importantes}
+\begin{code}
+sed -i 's/image: nginx$/image: nginx:1.27/' 04-deployments/deployment-nginx.yaml
+kubectl apply -f 04-deployments/deployment-nginx.yaml   # lance la mise à jour
+kubectl rollout status deployment monsite     # suit jusqu'à "successfully rolled out"
+kubectl rollout history deployment monsite    # liste des révisions
+kubectl rollout undo deployment monsite       # revient à la révision précédente
+sed -i 's/image: nginx:1.27/image: nginx/' 04-deployments/deployment-nginx.yaml
+\end{code}
+
+\partie{C. Exercices pratiques}
+\exo{Exercice 6 : rolling update vers \cmd{nginx:1.27} \tp}
+\textbf{Résultats.} Deux ReplicaSets : \cmd{676bf75868} (nouveau, \cmd{nginx:1.27}) avec DESIRED 5, et \cmd{86f69f946d} (ancien) avec DESIRED 0. Cinq nouveaux Pods \cmd{monsite-676bf75868-xxxxx}.
+Dans les Events, l'ancien descend 5, 4, 3, 2, 1, 0 pendant que le nouveau monte 0, 2, 3, 4, 5. L'annotation \cmd{revision: 2} est posée.\\
+\textbf{Appris.} La mise à jour se fait sans coupure, mais deux versions coexistent pendant quelques secondes.
+
+\exo{Exercice 7 : rollback, puis correction de la dérive \tp}
+\begin{itemize}
+  \item \cmd{rollout history} : révisions 1 (\cmd{nginx}) et 2 (\cmd{nginx:1.27}).
+  \item \cmd{rollout undo} : kubectl affiche un avertissement (la configuration d'\cmd{apply} n'est pas mise à jour). \cmd{86f69f946d} remonte à 5, avec 5 Pods neufs en \cmd{nginx}.
+  \item \cmd{history} : révisions 2 et 3 ; la 1 est devenue la 3.
+  \item Fichier corrigé avec \cmd{sed}, puis \cmd{apply} : \cmd{configured} (et non \cmd{unchanged}, comme je l'avais prédit). Pas de révision 4, car le template du cluster était déjà identique.
+\end{itemize}
+
+\partie{D. Questions et réponses \tp}
+\QR{On modifie le template : combien de ReplicaSets après \cmd{apply} ? Les Pods gardent-ils leur nom ? Y a-t-il une coupure ?}{Deux : le nouveau à 5, l'ancien à 0. Les Pods changent de nom. Pas de coupure.}
+\QR{Dans les Events, l'ancien ReplicaSet passe-t-il à 0 d'un coup ?}{Non, petit à petit : cela prouve qu'il n'y a pas de coupure.}
+\QR{Au premier événement, le nouveau ReplicaSet passe à 2 alors que l'ancien en a 5 : combien de Pods tournent ? Que veut dire \og 25\,\% max surge \fg{} ?}{7 Pods. On a le droit de créer 2 Pods en plus du nombre voulu.}
+\QR{Que garantit \og 25\,\% max unavailable \fg{} (1 Pod sur 5) ?}{Qu'au moins 4 Pods restent disponibles pendant la mise à jour.}
+\QR{Pourquoi le Deployment garde-t-il l'ancien ReplicaSet à 0 ?}{Pour pouvoir faire un rollback.}
+\QR{Après \cmd{undo}, quel ReplicaSet passe à 5 ?}{L'ancien, \cmd{86f69f946d}. Il n'y a pas de troisième ReplicaSet.}
+\QR{Le fichier dit toujours \cmd{nginx:1.27} après le rollback : quel problème ?}{Une dérive entre le fichier et le cluster.}
+\QR{La révision 3 correspond à quelle image ? Pourquoi 3 et pas 1 ?}{\cmd{nginx}. Un rollback est un nouveau déploiement : il reçoit un nouveau numéro.}
+\QR{Pourquoi la révision 1 a-t-elle disparu ?}{Elle est devenue la 3 : le même ReplicaSet a été réutilisé et renuméroté.}
+\QR{Si quelqu'un relance \cmd{apply} demain sans corriger le fichier ?}{Retour à \cmd{nginx:1.27} : les clients retrouvent le problème.}
+\QR{Quelle commande supprime la dérive ?}{\cmd{sed} pour remettre \cmd{image: nginx} dans le fichier, puis \cmd{apply}.}
+\QR{Après la correction, \cmd{apply} affiche \cmd{created}, \cmd{configured} ou \cmd{unchanged} ?}{Ma prédiction était \cmd{unchanged} ; le résultat réel est \cmd{configured}. \cmd{apply} compare aussi le fichier à sa mémoire (\cmd{last-applied-configuration}), restée en \cmd{nginx:1.27} après \cmd{undo}. Les Pods, eux, n'ont pas changé.}
+\QR{Après la correction, y a-t-il une révision 4 ?}{Non, toujours 2 et 3 : le template du cluster n'a pas changé, donc pas de nouveau ReplicaSet.}
+
+\partie{E. Erreurs et dépannage}
+\begin{itemize}
+  \item \textbf{Prédiction \cmd{unchanged} fausse} : c'était \cmd{configured}, à cause de l'annotation \cmd{last-applied-configuration}.
+  \item \textbf{Avertissement après \cmd{undo}} : c'est normal, il signale la future dérive. Il faut corriger le fichier.
+\end{itemize}
+
+% =====================================================================
+\section{Les Services : ClusterIP, NodePort et port-forward}
+
+\partie{A. Résumé du cours}
+Les Pods changent d'IP quand ils sont remplacés, et ils sont plusieurs. Un \textbf{Service} donne un \emph{nom DNS} et une \emph{IP fixe} devant un groupe de Pods choisis par étiquette, et il répartit les connexions entre eux. C'est l'accueil du restaurant.
+\begin{itemize}
+  \item \textbf{ClusterIP} (par défaut) : accessible uniquement depuis l'intérieur du cluster.
+  \item \textbf{NodePort} : un ClusterIP \emph{plus} un port ouvert sur le nœud (entre 30000 et 32767), accessible de l'extérieur.
+  \item \textbf{port-forward} : un tunnel temporaire PC $\rightarrow$ cluster, relayé par l'API server. Même vers un Service, il se branche sur \emph{un seul Pod} choisi au démarrage. C'est un outil de débogage.
+\end{itemize}
+\textbf{Les trois ports :} \cmd{nodePort} (port du nœud, 30080) $\rightarrow$ \cmd{port} (port du Service, 80) $\rightarrow$ \cmd{targetPort} (port du conteneur, 80).\\
+L'IP d'un Service (\cmd{10.109.x.x}) n'est pas dans la plage des Pods (\cmd{10.244.x.x}) : c'est une adresse virtuelle.
+
+\partie{B. Commandes importantes}
+\begin{code}
+kubectl apply --dry-run=client -f 06-services/service-clusterip.yaml  # test à blanc
+kubectl get services                     # TYPE, CLUSTER-IP, EXTERNAL-IP, PORT(S)
+kubectl describe service monsite-svc     # Selector, IP, Port, TargetPort, Endpoints
+kubectl run test --image=busybox --restart=Never -- wget -qO- http://monsite-svc
+kubectl logs test                        # page reçue par le client de test
+kubectl delete pod test                  # ménage
+minikube ip                              # IP du nœud (192.168.49.2)
+curl -s http://192.168.49.2:30080        # accès NodePort depuis le PC
+kubectl port-forward service/monsite-svc 8080:80 > ~/pf.log 2>&1 &   # tunnel
+curl -s http://localhost:8080 | grep title   # test du tunnel
+pkill -f port-forward                    # ferme le tunnel
+\end{code}
+
+\partie{C. Exercices pratiques}
+\exo{Exercice 8 : Service ClusterIP \cmd{monsite-svc} \tp}
+\textbf{Fichier \cmd{06-services/service-clusterip.yaml}} (écrit à partir d'un squelette).
+\begin{code}
+apiVersion: v1
+kind: Service
+metadata:
+  name: monsite-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: monsite         # directement sous selector, sans matchLabels
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+\end{code}
+\textbf{Résultats.} \cmd{created} ; ClusterIP \cmd{10.109.84.17}, \cmd{80/TCP}, \cmd{EXTERNAL-IP <none>}. Endpoints : les 5 IP des Pods (\cmd{.19} à \cmd{.23}).
+Test interne avec busybox : le Pod \cmd{test} passe en \cmd{Completed} (\cmd{READY 0/1}, la commande est finie) et ses logs contiennent la page \og Welcome to nginx! \fg.\\
+\textbf{Appris.} Le client n'a jamais connu l'IP d'un Pod : il a utilisé le nom \cmd{monsite-svc}, traduit par CoreDNS (\cmd{monsite-svc.default.svc.cluster.local}).
+
+\exo{Exercice 9 : Service NodePort \cmd{monsite-nodeport} \tp}
+Copie du ClusterIP, puis trois changements faits avec \cmd{sed} : le nom, le type (\cmd{NodePort}) et l'ajout de \cmd{nodePort: 30080}.
+\begin{code}
+cp 06-services/service-clusterip.yaml 06-services/service-nodeport.yaml
+sed -i 's/name: monsite-svc/name: monsite-nodeport/' 06-services/service-nodeport.yaml
+sed -i 's/type: ClusterIP/type: NodePort/' 06-services/service-nodeport.yaml
+sed -i 's/^      targetPort: 80$/&\n      nodePort: 30080/' 06-services/service-nodeport.yaml
+\end{code}
+\textbf{Résultats.} \cmd{NodePort 10.111.148.216 80:30080/TCP}. \cmd{curl} sur \cmd{192.168.49.2:30080} depuis le PC renvoie la page nginx.\\
+\textbf{Appris.} Sans changer le nom, \cmd{apply} aurait répondu \cmd{monsite-svc unchanged} : un objet est identifié par son type et son nom.
+
+\exo{Exercice 10 : port-forward et panne d'un Pod \tp}
+\textbf{Déroulé.} Tunnel lancé en arrière-plan ; \cmd{curl localhost:8080} fonctionne. Puis suppression du Pod \cmd{mf7nv} (IP \cmd{.19}).\\
+\textbf{Résultats.}
+\begin{itemize}
+  \item Remplaçant \cmd{7t7wk}, nouvelle IP \cmd{.25}. Dans l'EndpointSlice, \cmd{.19} est retirée et \cmd{.25} ajoutée, automatiquement.
+  \item Le NodePort continue de répondre, sans aucun changement côté client.
+  \item Le port-forward meurt (\cmd{error: lost connection to pod}) : il était branché justement sur \cmd{mf7nv}. Il a fallu le relancer.
+\end{itemize}
+\textbf{Appris.} Le Service suit les Pods par étiquette ; le port-forward ne fait pas de répartition.
+
+\partie{D. Questions et réponses \tp}
+\QR{Combien d'adresses sur la ligne Endpoints, et à quoi correspondent-elles ?}{5 : ce sont les 5 Pods de \cmd{monsite} (IP:port), trouvés grâce à \cmd{app=monsite}. La liste se met à jour toute seule.}
+\QR{À quoi sert le Service \cmd{kubernetes} ?}{C'est l'accès à l'API server (HTTPS, 443), créé automatiquement.}
+\QR{Pourquoi \cmd{EXTERNAL-IP} vaut \cmd{<none>} ?}{Parce que ClusterIP est interne, pas accessible de l'extérieur.}
+\QR{Peux-tu savoir quel Pod a répondu au client busybox ?}{Non : les 5 Pods servent la même page, et le Service choisit un Pod à chaque connexion.}
+\QR{Qui a traduit \cmd{monsite-svc} en IP ?}{Le DNS du cluster, CoreDNS.}
+\QR{Le même \cmd{wget http://monsite-svc} depuis le PC marcherait-il ?}{Non : ClusterIP est interne, et ce nom n'existe que dans le DNS du cluster.}
+\QR{Dans \cmd{80:30080/TCP}, que représentent 80 et 30080 ?}{80 est le port du Service ; 30080 est le port ouvert sur le nœud.}
+\QR{\cmd{monsite-nodeport} a-t-il aussi une CLUSTER-IP ? Qu'en conclure ?}{Oui : NodePort inclut ClusterIP et ajoute une porte sur le nœud.}
+\QR{Pourquoi \cmd{curl 192.168.49.2:30080} marche depuis le PC, et pas \cmd{wget http://monsite-svc} ?}{On utilise l'IP du nœud, connue du PC, au lieu d'un nom interne ; et NodePort est accessible de l'extérieur.}
+\QR{Pourquoi le tunnel vers un ClusterIP interne marche-t-il depuis le PC ?}{kubectl relaie le trafic via l'API server.}
+\QR{Le Service a-t-il suivi la panne ? Et le port-forward ?}{Le Service, oui (Endpoints mis à jour). Le port-forward, non : il était fixé sur le Pod supprimé.}
+\QR{Le client du NodePort a-t-il dû changer quelque chose pendant la panne ?}{Non, rien : même IP, même port.}
+
+\partie{E. Erreurs et dépannage}
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{4.4cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{4.6cm}@{}}
+\toprule
+\textbf{Symptôme} & \textbf{Cause} & \textbf{Correction} \\
+\midrule
+\cmd{cat: \ldots No such file or directory} & nano quitté sans enregistrer (seul le verrou \cmd{.swp} existait) & Ctrl+O, Entrée (\og Wrote X lines \fg), Ctrl+X \\
+Fichier NodePort identique au ClusterIP & la commande \cmd{cp} ou l'édition n'avait pas été lancée & \cmd{cp} avec \cmd{!}, puis \cmd{sed} \\
+\cmd{curl -s} n'affiche rien & aucun tunnel en marche (\cmd{-s} masque l'erreur) & lancer le port-forward avec \cmd{\&}, vérifier \cmd{\textasciitilde/pf.log} \\
+Tunnel arrêté après la suppression d'un Pod & port-forward lié à un seul Pod & relancer le port-forward \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% =====================================================================
+\section{Labels, selectors, Endpoints et EndpointSlices}
+
+\partie{A. Résumé du cours}
+\textbf{Les labels} sont des étiquettes clé/valeur posées sur les objets (\cmd{app: monsite}). \textbf{Les selectors} sont des filtres sur ces étiquettes. Tout le lien entre objets passe par eux, jamais par les noms ni par les IP.
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+\textbf{Objet} & \textbf{Comment il choisit ses Pods} \\
+\midrule
+Deployment / ReplicaSet & \cmd{selector.matchLabels}, qui doit correspondre aux labels du template \\
+ReplicaSet d'un Deployment & \cmd{app=monsite} plus \cmd{pod-template-hash} (sépare les versions) \\
+Service & \cmd{selector} directement (sans \cmd{matchLabels}) \\
+kubectl & \cmd{-l app=web} pour filtrer l'affichage \\
+\bottomrule
+\end{tabularx}
+\end{center}
+\textbf{Endpoints / EndpointSlice} : la liste à jour des IP:port des Pods \emph{prêts} qui correspondent au selector d'un Service. Kubernetes la crée et l'entretient lui-même (par exemple \cmd{monsite-svc-7nddl}). Dans les versions récentes, l'EndpointSlice remplace l'ancien objet Endpoints.
+
+\textbf{Deux cas de diagnostic réalisés à l'oral :}
+\begin{itemize}
+  \item Selector \cmd{app: monsite}, Pods étiquetés \cmd{app: mon-site} : les Endpoints sont \emph{vides} et le site est inaccessible.
+  \item \cmd{targetPort: 8080} alors que nginx écoute sur 80 : les Endpoints sont \emph{remplis}, mais le site ne répond pas. Des Endpoints remplis ne garantissent pas un Service qui fonctionne.
+\end{itemize}
+
+\partie{B. Commandes importantes}
+\begin{code}
+kubectl get pods -l app=monsite                    # Pods portant l'étiquette
+kubectl get endpointslices -l kubernetes.io/service-name=monsite-svc
+kubectl describe endpointslice -l kubernetes.io/service-name=monsite-svc | grep Addresses
+\end{code}
+\compl{} \cmd{kubectl get pods --show-labels} affiche toutes les étiquettes ; \cmd{kubectl label pod <nom> cle=valeur} en ajoute une.
+
+\partie{D. Questions et réponses \tp}
+\QR{Que verras-tu si les Pods ont \cmd{app: mon-site} et le Service \cmd{selector: app: monsite} ?}{Des Endpoints vides : les labels ne correspondent pas au selector. Le client ne peut pas accéder au site.}
+\QR{\cmd{targetPort: 8080} alors que nginx écoute sur 80 : Endpoints vides ou remplis ? Le site marche-t-il ?}{Les Endpoints sont remplis, car le selector correspond, mais le site ne marche pas : le trafic part vers un port où personne n'écoute.}
+
+% =====================================================================
+\section{Autres notions étudiées}
+
+\subsection{Déclaratif, impératif et \cmd{apply}}
+\begin{itemize}
+  \item \cmd{apply} répond \cmd{created} (nouvel objet), \cmd{configured} (objet modifié) ou \cmd{unchanged} (rien à faire).
+  \item \cmd{--dry-run=client} vérifie le fichier localement sans rien créer. \cmd{--dry-run=server} le fait valider par l'API server, sans rien enregistrer (utilisé pour valider les manifestes du dépôt).
+  \item Les commandes impératives (\cmd{scale}, \cmd{rollout undo}, \cmd{kubectl run}) sont utiles en urgence ou pour un test, mais il faut ensuite reporter le changement dans le fichier.
+\end{itemize}
+
+\subsection{Namespaces et DNS}
+\begin{itemize}
+  \item Mes objets sont dans le namespace \cmd{default} ; les composants système (CoreDNS\ldots) sont dans \cmd{kube-system}.
+  \item Nom DNS complet d'un Service : \cmd{<service>.<namespace>.svc.cluster.local}.
+\end{itemize}
+\compl{} Les namespaces seront travaillés au Jour 2.
+
+\subsection{Pod client jetable}
+\cmd{kubectl run test --image=busybox --restart=Never -- <commande>} crée un Pod seul qui exécute la commande puis s'arrête (\cmd{Completed}). C'est pratique pour tester un Service de l'intérieur.
+
+\subsection{Outils du terminal utilisés}
+\begin{code}
+sed -i 's/ancien/nouveau/' fichier   # remplace un texte dans un fichier
+sed -i 's/^ligne$/&\nnouvelle/' f    # & = ligne trouvée ; \n = ajoute une ligne
+grep mot fichier                     # lignes contenant "mot"
+cmd | grep mot                       # filtre la sortie d'une commande
+cp source destination                # copie un fichier
+echo "texte" >> fichier              # ajoute une ligne (> écraserait le fichier)
+cmd1 && cmd2                         # cmd2 seulement si cmd1 a réussi
+cmd > f.log 2>&1 &                   # arrière-plan, sorties dans un fichier
+pkill -f motif                       # arrête le processus dont la commande contient "motif"
+\end{code}
+
+\subsection{Git et publication sécurisée}
+\begin{itemize}
+  \item Dépôt public : \cmd{K8s-learning-labs}. Commits en français, jamais de \cmd{--force}.
+  \item \cmd{.gitignore} : kubeconfig, \cmd{*.key}, \cmd{*.crt}, \cmd{*.pem}, \cmd{.env}, dossiers minikube, \cmd{*.tar}, \cmd{*.tgz}, \cmd{*.log}.
+  \item Les fichiers personnels sont exclus seulement en local, via \cmd{.git/info/exclude}.
+  \item Avant chaque commit : relire la liste des fichiers et chercher les secrets (\cmd{token}, \cmd{password}, \cmd{client-key-data}, \cmd{BEGIN PRIVATE KEY}).
+  \item Un manifeste de type Secret ne contiendra que des valeurs d'exemple (\cmd{changeme}).
+\end{itemize}
+\begin{code}
+git status                   # ce qui a changé
+git add -A && git status     # tout préparer, puis vérifier la liste
+git commit -m "message"      # enregistrer une version
+git push                     # envoyer sur GitHub
+git log --oneline            # historique des commits
+\end{code}
+
+\subsection{Erreurs de méthode rencontrées}
+\begin{itemize}
+  \item \cmd{nano} ne marche pas avec \cmd{!} (\og Standard input is not a terminal \fg) : utiliser \cmd{sed} ou un deuxième terminal.
+  \item Commande envoyée sans \cmd{!} : elle n'est pas exécutée.
+  \item \cmd{kubectl apply} sur un fichier inexistant (\cmd{the path \ldots does not exist}) : écrire le fichier d'abord.
+  \item Répondre par prédiction sans exécuter : toujours prouver avec la commande et la sortie.
+\end{itemize}
+
+% =====================================================================
+\section{Questions Kubernetes pour un entretien DevOps M2}
+
+Réponses courtes, à dire à l'oral. \tp{} : question réellement posée pendant les TP ; \compl{} : question nouvelle.
+
+\subsection{Pods}
+\QR{\tp{} Kubernetes gère-t-il des conteneurs ou des Pods ?}{Des Pods. Un Pod enveloppe un ou plusieurs conteneurs qui partagent le réseau et le stockage.}
+\QR{\compl{} Quelle différence entre un Pod \cmd{Running} et un Pod \cmd{Ready} ?}{\cmd{Running} : le conteneur est démarré. \cmd{Ready} : le Pod est prêt à recevoir du trafic (readiness probe réussie, colonne \cmd{READY 1/1}). Seuls les Pods Ready sont dans les Endpoints d'un Service.}
+\QR{\compl{} Que signifie un \cmd{RESTARTS} qui augmente sans arrêt ?}{Le conteneur plante en boucle, d'où l'état \cmd{CrashLoopBackOff}. On regarde \cmd{kubectl logs --previous} et les Events de \cmd{describe}.}
+\QR{\compl{} Pourquoi ne crée-t-on presque jamais de Pod seul en production ?}{Parce qu'il n'est pas relancé s'il meurt : on passe par un Deployment.}
+
+\subsection{Deployments}
+\QR{\tp{} Quelle différence entre Pod, ReplicaSet et Deployment ?}{Le Pod exécute l'application ; le ReplicaSet maintient N Pods repérés par leurs étiquettes ; le Deployment pilote les ReplicaSets (un par version) et apporte le rolling update et le rollback.}
+\QR{\tp{} Que se passe-t-il lorsqu'on supprime un Pod géré par un Deployment ?}{Le ReplicaSet voit qu'il en manque un et en recrée un, avec un nouveau nom et une nouvelle IP. Vérifié : \cmd{f56w5} remplacé par \cmd{4vcxz}, puis \cmd{mf7nv} par \cmd{7t7wk}.}
+\QR{\tp{} Comment fonctionne un rolling update ?}{Un nouveau ReplicaSet monte pendant que l'ancien descend, dans les limites de maxSurge et maxUnavailable : pas de coupure, mais deux versions coexistent un moment.}
+\QR{\tp{} Comment faire un rollback ? Crée-t-il une révision ?}{\cmd{kubectl rollout undo} : il réutilise l'ancien ReplicaSet et crée une nouvelle révision (la 1 devient la 3). Ensuite, il faut corriger le fichier.}
+\QR{\tp{} Déclaratif ou impératif ?}{Déclaratif : le fichier dans Git fait foi. L'impératif crée une dérive.}
+\QR{\compl{} Comment revenir à une révision précise ?}{\cmd{kubectl rollout undo deployment <nom> --to-revision=N}.}
+
+\subsection{ReplicaSets}
+\QR{\tp{} Comment Kubernetes maintient-il 3 replicas ?}{Le Deployment crée un ReplicaSet, qui compte en permanence les Pods portant son étiquette et compare au nombre voulu : il crée s'il en manque, supprime s'il y en a trop. C'est la boucle de réconciliation. Je l'ai testé en supprimant un Pod.}
+\QR{\tp{} Pourquoi garder les anciens ReplicaSets à 0 ?}{Pour le rollback : une révision = un ReplicaSet.}
+\QR{\tp{} Un ReplicaSet peut-il prendre un Pod qu'il n'a pas créé ?}{Oui, il l'adopte s'il porte la bonne étiquette (\cmd{Controlled By}). Il peut aussi supprimer un Pod en trop.}
+
+\subsection{Services}
+\QR{\tp{} Pourquoi utiliser un Service plutôt que l'IP des Pods ?}{Les IP des Pods changent. Le Service offre un nom DNS et une IP stables, et répartit le trafic entre les Pods prêts.}
+\QR{\tp{} Quelle différence entre ClusterIP, NodePort et port-forward ?}{ClusterIP : interne. NodePort : ClusterIP plus un port sur chaque nœud (30000--32767), pour un accès externe. port-forward : tunnel temporaire via l'API server vers un seul Pod, pour déboguer.}
+\QR{\tp{} Comment un Service sélectionne-t-il ses Pods ?}{Par son \cmd{selector}, comparé aux labels des Pods ; le résultat est la liste des Endpoints (EndpointSlice), mise à jour automatiquement.}
+\QR{\compl{} Et en production, comment expose-t-on une application ?}{Avec un Service \cmd{LoadBalancer} (load balancer du cloud) ou un \cmd{Ingress} (routage HTTP par nom de domaine ou chemin), plutôt qu'avec NodePort.}
+\QR{\compl{} Que sont \cmd{port}, \cmd{targetPort} et \cmd{nodePort} ?}{\cmd{port} : port du Service ; \cmd{targetPort} : port du conteneur ; \cmd{nodePort} : port ouvert sur le nœud.}
+
+\subsection{Réseau et dépannage}
+\QR{\tp{} Que vérifier lorsqu'un Service est inaccessible alors que les Pods sont Running ?}{Dans l'ordre : 1) les Endpoints (vides : selector différent des labels) ; 2) \cmd{targetPort} = port du conteneur ; 3) les Pods sont-ils Ready ; 4) test depuis l'intérieur avec busybox, pour séparer un problème de Service d'un problème d'accès externe ; 5) \cmd{logs} et \cmd{describe} des Pods.}
+\QR{\tp{} Que se passe-t-il si les labels ne correspondent pas au selector ?}{Les Endpoints sont vides : le Service n'envoie le trafic nulle part.}
+\QR{\tp{} Que se passe-t-il si \cmd{targetPort} ne correspond pas au port de nginx ?}{Les Endpoints sont remplis, mais les connexions échouent : personne n'écoute sur ce port.}
+\QR{\tp{} Qui traduit le nom d'un Service en IP ?}{CoreDNS, le DNS du cluster.}
+\QR{\compl{} Un Pod reste en \cmd{Pending} : que regarder ?}{Les Events de \cmd{kubectl describe pod} : pas de nœud disponible, ressources insuffisantes, volume manquant\ldots}
+\QR{\compl{} Un Pod est en \cmd{ImagePullBackOff} : que faire ?}{Vérifier le nom et le tag de l'image, l'accès au registre et les identifiants, dans les Events de \cmd{describe}.}
+
+% =====================================================================
+\section{Fiche récapitulative des commandes}
+
+TP : déjà utilisée ; Compl. : à connaître pour l'entretien (pas encore pratiquée).
+
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}>{\raggedright\arraybackslash\ttfamily\small}p{8.2cm}>{\raggedright\arraybackslash\small}p{5.6cm}>{\centering\arraybackslash\small}p{1.5cm}@{}}
+\toprule
+\normalfont\textbf{Commande} & \textbf{Fonction} & \textbf{État} \\
+\midrule
+\endfirsthead
+\toprule
+\normalfont\textbf{Commande} & \textbf{Fonction} & \textbf{État} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\multicolumn{3}{@{}l}{\textbf{Cluster et minikube}} \\
+minikube start --driver=docker & crée ou rallume le cluster & TP \\
+minikube status & état du cluster & TP \\
+minikube stop & éteint le cluster & TP \\
+minikube ip & IP du nœud & TP \\
+kubectl get nodes & nœuds et état Ready & TP \\
+kubectl version --client & version de kubectl & TP \\
+kubectl cluster-info & adresse de l'API server & Compl. \\
+kubectl config get-contexts & clusters configurés & Compl. \\
+minikube service <svc> --url & URL d'accès à un NodePort & Compl. \\
+\midrule
+\multicolumn{3}{@{}l}{\textbf{Pods}} \\
+kubectl get pods & liste des Pods & TP \\
+kubectl get pods -o wide & avec IP et nœud & TP \\
+kubectl get pods -l app=web & filtre par étiquette & TP \\
+kubectl describe pod <nom> & fiche et Events & TP \\
+kubectl delete pod <nom> & supprime un Pod & TP \\
+kubectl run test --image=busybox --restart=Never -- <cmd> & Pod jetable de test & TP \\
+kubectl get pods -w & suit les changements en direct & Compl. \\
+kubectl get pods --show-labels & affiche les étiquettes & Compl. \\
+kubectl exec -it <pod> -- sh & shell dans le conteneur & Compl. \\
+\midrule
+\multicolumn{3}{@{}l}{\textbf{Deployments}} \\
+kubectl get deployments & état READY / UP-TO-DATE & TP \\
+kubectl describe deployment <nom> & stratégie et Events & TP \\
+kubectl get deployments,replicasets,pods & les trois niveaux & TP \\
+kubectl create deployment <nom> --image=nginx --dry-run=client -o yaml & génère un YAML de départ & Compl. \\
+\midrule
+\multicolumn{3}{@{}l}{\textbf{ReplicaSets}} \\
+kubectl get replicasets & DESIRED / CURRENT / READY & TP \\
+kubectl describe replicaset <nom> & Controlled By, Selector & TP \\
+kubectl delete replicaset <nom> & supprime le ReplicaSet et ses Pods & TP \\
+\midrule
+\multicolumn{3}{@{}l}{\textbf{Services et réseau}} \\
+kubectl get services & liste des Services & TP \\
+kubectl describe service <nom> & Selector, ports, Endpoints & TP \\
+kubectl get endpointslices -l \allowbreak kubernetes.io/service-name=<svc> & Pods derrière le Service & TP \\
+kubectl port-forward service/<svc> 8080:80 & tunnel PC vers un Pod & TP \\
+kubectl port-forward pod/<pod> 8080:80 & tunnel vers un Pod précis & Compl. \\
+curl -s http://<ip-noeud>:30080 & teste un NodePort & TP \\
+kubectl expose deployment <nom> --port=80 --type=NodePort & crée un Service en impératif & Compl. \\
+\midrule
+\multicolumn{3}{@{}l}{\textbf{Scaling et mises à jour}} \\
+kubectl apply -f <fichier> & applique l'état souhaité & TP \\
+kubectl scale deployment <nom> --replicas=N & scaling impératif & TP* \\
+kubectl rollout status deployment <nom> & suit une mise à jour & TP \\
+kubectl rollout history deployment <nom> & liste des révisions & TP \\
+kubectl rollout undo deployment <nom> & rollback & TP \\
+kubectl rollout undo deployment <nom> --to-revision=N & rollback vers une révision & Compl. \\
+kubectl set image deployment/<nom> nginx=nginx:1.27 & change l'image (impératif) & Compl. \\
+kubectl rollout restart deployment <nom> & recrée tous les Pods & Compl. \\
+\midrule
+\multicolumn{3}{@{}l}{\textbf{Logs et dépannage}} \\
+kubectl logs <pod> & sortie du conteneur & TP \\
+kubectl logs -f <pod> & suit les logs en direct & Compl. \\
+kubectl logs --previous <pod> & logs du conteneur précédent (crash) & Compl. \\
+kubectl get events \allowbreak --sort-by=.metadata.creationTimestamp & événements récents & Compl. \\
+kubectl get pods -o custom-columns=\allowbreak NOM:.metadata.name,\allowbreak IMAGE:.spec.\allowbreak containers[0].image & colonnes choisies & TP \\
+kubectl explain deployment.spec & documentation intégrée & Compl. \\
+\midrule
+\multicolumn{3}{@{}l}{\textbf{Fichiers YAML et nettoyage}} \\
+kubectl apply --dry-run=client -f <fichier> & vérifie sans créer & TP \\
+kubectl apply --dry-run=server -f <fichier> & validation par l'API server & TP \\
+kubectl delete -f <fichier> & supprime ce que décrit le fichier & TP \\
+kubectl get <objet> <nom> -o yaml & affiche l'objet complet & Compl. \\
+kubectl diff -f <fichier> & différences fichier / cluster & Compl. \\
+kubectl get all & principaux objets du namespace & Compl. \\
+\end{longtable}
+{\small * Commande étudiée ; son exécution n'est pas attestée dans les notes.\par}
+
+\end{document}
