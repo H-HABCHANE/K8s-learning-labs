@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: oom-demo                  # Nom du Pod spécifié dans l'énoncé
+spec:
+  containers:
+  - name: memory-stresser         # Nom du conteneur (choix libre)
+    image: polinux/stress         # Image contenant l'utilitaire "stress"
+    
+    # Configuration de la mémoire (le CPU est volontairement omis ici)
+    resources:
+      requests:
+        memory: 50Mi              # Mémoire garantie et réservée au démarrage
+      limits:
+        memory: 100Mi             # Plafond strict : le conteneur sera tué s'il le dépasse
+        
+    # Instructions d'exécution qui vont provoquer le dépassement
+    command: ["stress"]           # Programme principal à lancer
+    args: ["--vm", "1", "--vm-bytes", "250M", "--vm-hang", "1"] 
+    # --vm 1 : lance 1 processus de consommation mémoire
+    # --vm-bytes 250M : ordonne au processus de réclamer 250 Mo (bien au-dessus de la limite de 100Mi)
+    # --vm-hang 1 : maintient l'allocation active

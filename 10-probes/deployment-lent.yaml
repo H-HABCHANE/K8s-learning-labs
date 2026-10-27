@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lent
+  template:
+    metadata:
+      labels:
+        app: lent
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27
+          ports:
+            - containerPort: 80
+          command: ["sh", "-c", "sleep 30; exec nginx -g 'daemon off;'"]
+          livenessProbe:            # stricte : tue le conteneur après ~20 s sans réponse...
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+          startupProbe:             # ...mais elle ne démarre qu'APRÈS le succès de la startup probe
+            httpGet:
+              path: /
+              port: 80
+            periodSeconds: 5        # un test toutes les 5 s
+            failureThreshold: 12    # 12 × 5 = 60 s de budget pour démarrer

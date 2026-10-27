@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config       # le nom de la ConfigMap
+data:                    # les paires clé: valeur (toujours des chaînes)
+  APP_COULEUR: "jaune"
+  APP_MODE: "production"

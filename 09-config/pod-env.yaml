@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: env-demo              # Le nom du Pod demandé dans l'exercice
+  labels:
+    app: debug                # Étiquette (conservée de ton code initial)
+spec:
+  containers:
+  - name: busybox             # Nom du conteneur (ne doit pas contenir le tag ':1.36')
+    image: busybox:1.36       # L'image Docker exacte demandée (remplace nginx)
+    
+    # Déclaration des variables d'environnement (au même niveau que 'image')
+    env:
+    - name: APP_COULEUR       # Nom de la 1ère variable
+      value: "rouge"           # Valeur de la 1ère variable
+    - name: APP_MODE          # Nom de la 2ème variable
+      value: "debug"          # Valeur de la 2ème variable
+      
+    # Commande exécutée au démarrage du conteneur (au même niveau que 'image' et 'env')
+    command: ["sh", "-c", "echo Couleur=$APP_COULEUR Mode=$APP_MODE; sleep 3600"]
+    
+    # Note : La section 'ports' a été supprimée car busybox n'écoute pas sur un port comme un site web
