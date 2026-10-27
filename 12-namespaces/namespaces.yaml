@@ -1,0 +1,11 @@
+apiVersion: v1              # Version de l'API standard de Kubernetes
+kind: Namespace             # Le type d'objet que l'on souhaite créer
+metadata:
+  name: dev                 # Le nom du premier namespace (environnement de développement)
+
+---                         # Ce séparateur est crucial : il permet de déclarer un nouvel objet dans le même fichier
+
+apiVersion: v1              # On doit redéclarer l'API pour le nouvel objet
+kind: Namespace             # À nouveau, on précise le type d'objet
+metadata:
+  name: prod                # Le nom du deuxième namespace (environnement de production)

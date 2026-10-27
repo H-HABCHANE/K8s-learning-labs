@@ -25,14 +25,17 @@ Objectif : déployer une application, la rendre accessible et gérer ses mises �
 - [x] Questions d'entretien Kubernetes (5 questions + 2 cas concrets, 06-services/README.md)
 Validation : déploiement, exposition et rollback sans tutoriel. ✅ Défi final réussi (08-defi-jour1/).
 
-## Jour 2 — Kubernetes : configuration et dépannage  [~]
+## Jour 2 — Kubernetes : configuration et dépannage  [x] (validé le 27/10/2026)
 - [x] ConfigMaps, Secrets, variables d'environnement (09-config/)
 - [x] Readiness, liveness, startup probes (10-probes/)
-- [~] Requests, limits, namespaces (11-ressources/) — requests/limits OK
-- [ ] Volumes, PVC et bases d'Ingress
-- [ ] Simuler CrashLoopBackOff et ImagePullBackOff ; analyser describe, logs, events
-- [ ] Mini-entretien Kubernetes
-Validation : identifier une panne et justifier sa correction.
+- [x] Requests, limits, namespaces (11-ressources/, 12-namespaces/)
+- [x] Volumes, PVC et bases d'Ingress (13-volumes/, 14-ingress/)
+- [x] Simuler CrashLoopBackOff et ImagePullBackOff ; analyser describe, logs, events (15-pannes/)
+- [x] Mini-entretien Kubernetes (15-pannes/README.md)
+Validation : identifier une panne et justifier sa correction. ✅ Défi réussi (16-defi-jour2/ : 4 pannes).
+
+> Les Jours 3 à 10 continuent dans un autre dossier (CI/CD et suite DevOps). Dans ce dépôt, la suite
+> Kubernetes avancé est suivie dans `PROGRESSION_K8S_AVANCE.md`.
 
 ## Jour 3 — GitHub Actions et CI/CD  [ ]
 - [ ] Workflow, event, job, step, runner
@@ -111,7 +114,7 @@ Validation : défendre le projet et résoudre un incident simple.
 |---|---|---|
 | 1 | Différence entre Pod, ReplicaSet et Deployment ? | [x] (19/10) |
 | 2 | Comment Kubernetes maintient-il trois replicas ? | [x] (20/10) |
-| 3 | Comment diagnostiquer CrashLoopBackOff ? | [ ] |
+| 3 | Comment diagnostiquer CrashLoopBackOff ? | [x] (27/10) |
 | 4 | Comment fonctionne un pipeline GitHub Actions ? | [ ] |
 | 5 | Comment sécuriser IAM, SSH et les secrets CI/CD ? | [ ] |
 | 6 | Comment déployer sur EC2 ? | [ ] |
@@ -126,3 +129,4 @@ Validation : défendre le projet et résoudre un incident simple.
 - 24/10 : décision de REFAIRE le Jour 1 complet de zéro avant le défi final (dossier 07-revision-jour1/, appli « vitrine », solutions expliquées commande par commande, cluster nettoyé). Défi final ensuite dans 08-defi-jour1/, sans aide.
 - 25/10 : révision étape 0 validée (minikube redémarré, monsite + 2 Services supprimés, il ne reste que service/kubernetes ; 3 questions : etcd/réconciliation, cascade ownerReferences, Service kubernetes). Étape 1 validée (Pod seul vitrine : pas de Controlled By, non recréé ; scheduler vs kubelet ; IP de Pod temporaire). Étape 2 validée (Deployment vitrine ×3, Pod supprimé remplacé par un nouveau, selector ≠ labels refusé, testé avec --dry-run=server). Étape 3 validée (Controlled By sur Pod et RS, pod-template-hash, -l). Étape 4 validée (scale 3→5 déclaratif, kubectl diff, dérive, hash = template seulement). Étape 5 validée (rolling update 1.27 → 1.28, rollout status, 2 ReplicaSets, maxSurge/maxUnavailable, image inexistante). Étape 6 validée (rollout history/undo, révision 1 → 3, dérive corrigée : fichier + last-applied-configuration vérifiée en jsonpath). Étape 7 validée (ClusterIP vitrine-svc, Endpoints, test busybox par le nom DNS). Étape 8 validée (NodePort vitrine-nodeport 30080, curl depuis le PC, limites du NodePort en prod). Étape 9 validée (port-forward cassé par la suppression du Pod, NodePort toujours OK, Endpoints .21 → .27). Étape 10 validée (mini-entretien 5 questions). RÉVISION JOUR 1 TERMINÉE. Défi final commencé (08-defi-jour1/README.md). Défi étape 0 OK (delete -f 07-revision-jour1/). commandes.md complété avec les commandes de la révision. Pause. 26/10 : défi étape 1 OK (Deployment boutique httpd:2.4 3/3, RS boutique-68f55567b7). Défi étape 2 OK (service-boutique.yaml, NodePort 30090, 3 Endpoints). Défi étape 3 OK (It works! sur :30090). Défi étape 4 OK (rolling update → RS 6dc98d9795 httpd:2.4-alpine 3/3, ancien 68f55567b7 à 0). Défi étape 5 OK (rollback → RS 68f55567b7 httpd:2.4 3/3). Défi étape 6 OK (fichier remis en httpd:2.4, diff vide, apply, last-applied vérifiée). Défi étape 7 OK (It works! après rollback). 3 questions de fin réussies. ✅ JOUR 1 VALIDÉ. REPRISE : Jour 2.
 - 26/10 (suite) : Jour 2 commencé. Cluster nettoyé (boutique supprimé). Étape 1 variables d'environnement validée (Pod env-demo, logs, exec, Pod immuable → delete + apply, kubectl wait). Étape 2 validée (ConfigMap app-config, envFrom, CreateContainerConfigError réparée, variables figées → rollout restart). Étape 3 validée (Secret db-secret, base64 décodé, secretKeyRef, RBAC/etcd/Vault). Étape 4 validée (readiness 404 → rolling update bloqué, Pod hors Endpoints ; liveness 404 → tous les anciens remplacés, CrashLoopBackOff, Killing/BackOff ; réparation déclarative, RS réutilisé). Étape 5 validée (deployment-lent : sleep 30 + liveness stricte → CrashLoopBackOff ; startupProbe 12 × 5 s → 1/1 sans restart ; marge du budget). Fichier deployment-probes.yaml écrasé par erreur (édition nano du mauvais fichier) puis reconstruit depuis last-applied-configuration. Étape 6 validée (res-demo Burstable, Allocated resources, oom-demo OOMKilled Exit 137, trop-gros Pending Insufficient cpu). REPRISE : étape 7, namespaces.
+- 27/10 : étape 7 validée (namespaces système, dev/prod en YAML avec ---, même Deployment dans 2 namespaces, -n / -A, delete namespace en cascade, DNS vitrine-svc.prod). Étape 8 validée (sans volume : fichier perdu ; PVC data-pvc Bound, PV dynamique, fichier conservé ; PVC Terminating tant qu'utilisé ; Delete → PV supprimé). Étape 9 validée (addon ingress, ingress-nginx, Ingress vitrine.local/boutique.local, curl -H Host, 404 host inconnu). Étape 10 validée (ImagePullBackOff nginx:9.99 not found → set image ; panne-app Exit 1, logs vs logs --previous). Étape 11 validée (mini-entretien 5 questions). Défi Jour 2 réussi sans aide : 4 pannes (image alpnie, Secret manquant, readiness port 8080, selector magasin-web), diff vide, curl OK. ✅ JOUR 2 VALIDÉ. Suite : Jours 3 à 10 dans un autre dossier ; ici, Kubernetes avancé (PROGRESSION_K8S_AVANCE.md).

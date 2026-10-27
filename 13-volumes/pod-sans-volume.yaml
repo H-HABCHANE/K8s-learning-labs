@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sans-volume           # Le nom du Pod demandé
+spec:
+  containers:
+  - name: test-conteneur
+    image: busybox:1.36       # L'image demandée
+    command: ["sh", "-c", "sleep 3600"] # La commande pour garder le Pod actif
